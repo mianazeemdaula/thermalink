@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thermalink troubleshooting</title>
+<meta name="description" content="Fixes for the common problems: agent not reachable, browser permission prompts, wrong paper width, garbage characters.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/docs/troubleshooting/">
+<meta property="og:title" content="Thermalink troubleshooting">
+<meta property="og:description" content="Fixes for the common problems: agent not reachable, browser permission prompts, wrong paper width, garbage characters.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../">Thermalink</a>
+<nav><a href="../../docs/quickstart/">Quick start</a><a href="../../docs/reference/">Reference</a><a href="../../docs/troubleshooting/">Troubleshooting</a><a href="../../docs/compatibility/">Compatibility</a><a href="../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap wide">
+<h1>Troubleshooting</h1>
+<p><strong>SDK says <code>not_running</code></strong><br>The agent isn't running on <em>this</em> computer, or it uses a different port. Run <code>thermalink</code> in a terminal and look for "listening on http://127.0.0.1:17777". The browser must run on the same machine as the agent.</p>
+<p><strong><code>forbidden_origin</code> / 403</strong><br>Run <code>thermalink allow &lt;exact origin&gt;</code>, with scheme, host and port and no path (e.g. <code>https://pos.example.com</code>, <code>http://localhost:3000</code>), then restart the agent. The agent log prints the exact origin it blocked.</p>
+<p><strong>The agent is running, but the SDK still can't reach it (<code>permission_prompt</code> / <code>permission_denied</code>)</strong><br>Chrome 142+ and Firefox 153+ ask the user before a public website may talk to a program on the same computer. Until the user answers, requests hang; if they click Block, every request fails and the browser does not ask again. To the page that looks the same as "agent not installed", so use <code>tl.status()</code> instead of <code>tl.isRunning()</code> and show the right message:</p>
+<ul><li><code>permission_prompt</code>: tell the user to click <strong>Allow</strong> in the prompt next to the address bar.</li><li><code>permission_denied</code>: the user has to undo it by hand. Chrome/Edge: click the icon left of the address bar → Site settings → set <strong>Apps on device</strong> to Allow (Chrome 142–144 call it <strong>Local network access</strong>), then reload. Firefox: Settings → Privacy &amp; Security → Permissions → <strong>Device apps and services</strong> → Settings.</li></ul>
+<p>If your app runs inside a cross-origin <code>&lt;iframe&gt;</code>, the outer page must delegate the permission: <code>&lt;iframe allow=&quot;loopback-network; local-network-access&quot; …&gt;</code>.</p>
+<p>Managed fleets can pre-allow your site so nobody sees the prompt: Chrome/Edge policy <code>LocalNetworkAccessAllowedForUrls</code>; Firefox policy <code>LocalNetworkAccess</code>. Don't rely on <code>LocalNetworkAccessRestrictionsTemporaryOptOut</code>: Chrome is removing it (planned for Chrome 156).</p>
+<p>Pages you open from <code>http://localhost</code> during development are not affected.</p>
+<p><strong>Job "printed" but no paper comes out (Windows)</strong></p>
+<ul><li>Check the queue: Settings → Printers → open the printer. A job stuck in "Error" usually means the printer is off, out of paper, or the USB port changed.</li><li>Use the printer's own vendor driver, or the "Generic / Text Only" driver on the correct port. Thermalink sends RAW, so any driver that accepts RAW works.</li></ul>
+<p><strong>Receipt prints narrower than the paper, or lines wrap / spill onto the next line</strong><br>The printer's real width differs from what Thermalink assumed. Run <code>thermalink calibrate &lt;printer&gt;</code>, then save the widest fully printed bar: <code>thermalink alias receipt &quot;&lt;printer&gt;&quot; --dots &lt;N&gt;</code>. If an 80 mm printer only prints the 384 bar fully, it's set to <strong>58 mm paper mode</strong>. Change the paper width in the vendor's utility (e.g. Bixolon Unified Utility, Epson TM Utility) or with its DIP switches to use the full 80 mm.</p>
+<p><strong>Garbage characters / <code>?</code> instead of letters</strong><br>Use image mode (the default), which draws text with a TTF font and doesn't depend on printer codepages. For other alphabets set <code>fontFile</code> to a font that contains them. In text mode, pick a codepage that contains your characters (<code>cp858</code> for €, <code>cp866</code> for Cyrillic). Some cheap printers number codepages differently; try <code>cp437</code> and <code>cp1252</code>. Scripts that ESC/POS fonts can't show (CJK, Arabic, Urdu) should be sent as an <code>image</code>.</p>
+<p><strong>QR code or barcode doesn't print</strong><br>In image mode (the default) Thermalink draws QR codes and barcodes itself, so they print on any raster-capable printer. In text mode, very old or very cheap printers may lack native QR support (GS ( k). Switch that printer to image mode.</p>
+<p><strong>Image is too dark / too light</strong><br>Pass <code>&quot;dither&quot;: false, &quot;threshold&quot;: 100..180</code> for logos with flat colours. Dithering (the default) is best for photos and gradients.</p>
+<p><strong>Network printer times out</strong><br>Ping the printer and check it accepts raw jobs on port 9100 (most Epson, Star, Bixolon and Xprinter network models do). Increase <code>timeoutSeconds</code> for slow Wi-Fi printers.</p>
+<p><strong>macOS / Linux: <code>lp failed</code></strong><br>Add the printer in CUPS first (<code>lpstat -e</code> must list it). Thermalink sends with <code>-o raw</code>.</p>
+<p><strong>Port 17777 is busy</strong><br>Set <code>&quot;port&quot;</code> in the config and pass <code>new Thermalink({ url: &#x27;http://127.0.0.1:&lt;port&gt;&#x27; })</code>.</p>
+<p style="margin-top:36px">More docs: <a href="../quickstart/">Quick start</a> · <a href="../reference/">Reference</a> · <a href="../compatibility/">Compatibility</a></p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Buy Thermalink</a></div>
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>

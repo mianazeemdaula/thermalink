@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thermalink reference</title>
+<meta name="description" content="Thermalink receipt JSON, the agent HTTP API, the security model and the config file.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/docs/reference/">
+<meta property="og:title" content="Thermalink reference">
+<meta property="og:description" content="Thermalink receipt JSON, the agent HTTP API, the security model and the config file.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../">Thermalink</a>
+<nav><a href="../../docs/quickstart/">Quick start</a><a href="../../docs/reference/">Reference</a><a href="../../docs/troubleshooting/">Troubleshooting</a><a href="../../docs/compatibility/">Compatibility</a><a href="../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap wide">
+<h1>Reference</h1>
+<h2 id="receipt-json">Receipt JSON</h2>
+<pre><code>{
+  &quot;mode&quot;: &quot;image&quot;,      // optional: &quot;image&quot; (default) or &quot;text&quot;
+  &quot;dots&quot;: 576,          // optional: printable width in dots. Default: printer profile, then config.
+  &quot;width&quot;: 48,          // optional: characters per line (text mode), and the unit for column widths
+  &quot;font&quot;: &quot;sans&quot;,       // image mode: &quot;sans&quot; (default) or &quot;mono&quot;
+  &quot;fontSize&quot;: 24,       // image mode: pixel height of normal text
+  &quot;codepage&quot;: &quot;cp437&quot;,  // text mode: cp437 (default), cp850, cp858 (has €), cp866 (Cyrillic), cp1252
+  &quot;items&quot;: [ ...blocks ]
+}</code></pre>
+<h3 id="image-mode-vs-text-mode">Image mode vs text mode</h3>
+<div class="table-wrap"><table><thead><tr><th></th><th>image (default)</th><th>text</th></tr></thead><tbody><tr><td>How</td><td>Agent draws the receipt with TTF fonts at the printer's width and sends a raster (GS v 0). Cut/drawer are sent as commands</td><td>Printer's built-in font via ESC/POS text commands</td></tr><tr><td>Looks the same on all brands</td><td>✅</td><td>❌ (fonts, column counts, codepages differ)</td></tr><tr><td>Languages</td><td>Anything your font covers (set <code>fontFile</code> in the config, e.g. a Noto font for Cyrillic/Greek/CJK). Scripts that need shaping (Arabic, Urdu, Hindi) should be drawn in the browser and sent as an <code>image</code> block</td><td>Limited to the printer's codepages</td></tr><tr><td>Data per receipt</td><td>~10–40 KB</td><td>~0.2–1 KB</td></tr><tr><td>Best for</td><td>USB / network printers, consistent branding</td><td>Bluetooth/serial links, very old printers</td></tr></tbody></table></div>
+<p>In image mode, <code>size</code> scales text (1–4), and column <code>width</code> values are characters of <code>width</code> (default <code>dots / 12</code>), converted to pixels.</p>
+<div class="table-wrap"><table><thead><tr><th>Block</th><th>Fields</th><th>Notes</th></tr></thead><tbody><tr><td><code>text</code></td><td><code>value</code>, <code>align</code>, <code>bold</code>, <code>underline</code>, <code>invert</code>, <code>size</code> (1–4)</td><td>Word-wraps to the line width (divided by <code>size</code>). <code>\n</code> starts a new line.</td></tr><tr><td><code>row</code></td><td><code>left</code>, <code>right</code>, <code>bold</code></td><td>Item/price pair: right side is right-aligned, left side wraps.</td></tr><tr><td><code>columns</code></td><td><code>columns: [{text, width?, align?}]</code>, <code>bold</code></td><td><code>width</code> in characters; columns without a width share the rest. Cells wrap independently.</td></tr><tr><td><code>line</code></td><td><code>char</code> (default <code>-</code>)</td><td>Full-width divider.</td></tr><tr><td><code>feed</code></td><td><code>lines</code></td><td>Blank lines.</td></tr><tr><td><code>qr</code></td><td><code>value</code>, <code>size</code> (1–16, default 6), <code>align</code></td><td>Native printer QR (GS ( k, model 2, ECC M).</td></tr><tr><td><code>barcode</code></td><td><code>value</code>, <code>format</code> (CODE128 default, EAN13, EAN8, UPCA, CODE39), <code>height</code>, <code>hri</code>, <code>align</code></td><td>EAN/UPC values are length/digit checked.</td></tr><tr><td><code>image</code></td><td><code>data</code> (base64 or data: URL of PNG/JPEG/GIF), <code>align</code>, <code>size</code> (max width in dots), <code>threshold</code>, <code>dither</code></td><td>Scaled to paper width, Floyd–Steinberg dithered, sent as GS v 0 raster in 128-row bands. Transparency prints white.</td></tr><tr><td><code>cut</code></td><td><code>partial</code></td><td>Feeds 3 lines, then cuts.</td></tr><tr><td><code>drawer</code></td><td><code>pin</code> (2 or 5)</td><td>Kicks the cash drawer connected to the printer.</td></tr><tr><td><code>raw</code></td><td><code>data</code> (base64)</td><td>Inject any bytes (vendor-specific commands).</td></tr></tbody></table></div>
+<p>Characters that the selected codepage cannot represent print as <code>?</code>. Use <code>cp858</code> for €, <code>cp866</code> for Cyrillic. CJK/Arabic/Urdu text should be sent as an <code>image</code> (render it to a canvas in the browser, then call <code>Thermalink.imageToDataURL(canvas.toDataURL())</code>).</p>
+<h2 id="http-api-agent">HTTP API (agent)</h2>
+<p>Base URL <code>http://127.0.0.1:17777</code>. All bodies are JSON.</p>
+<div class="table-wrap"><table><thead><tr><th>Method &amp; path</th><th>Body</th><th>Response</th></tr></thead><tbody><tr><td><code>GET /v1/health</code></td><td>none</td><td><code>{ok, name, version}</code>. Open to all, used to detect the agent.</td></tr><tr><td><code>GET /v1/printers</code></td><td>none</td><td><code>{ok, printers: [...os names], aliases: {name: target}, default}</code></td></tr><tr><td><code>POST /v1/preview</code></td><td><code>{receipt, printer?}</code></td><td><code>{ok, mode, png, text, bytes}</code>. <code>png</code> is a data URL of exactly what will print (image mode), using that printer's profile</td></tr><tr><td><code>POST /v1/print</code></td><td><code>{receipt}</code> or <code>{raw: base64}</code>, plus <code>printer?</code>, <code>copies?</code> (1–20)</td><td><code>{ok, printer, bytes, copies, ms}</code></td></tr></tbody></table></div>
+<p>Errors: <code>{ok:false, error}</code> with status 400 (bad document), 401 (missing/wrong key), 403 (origin or host not allowed), 413 (body &gt; 8 MB), 502 (printer unreachable/failed).</p>
+<p><code>printer</code> may be an alias, an OS printer name, <code>tcp://host[:port]</code> or <code>file://path</code> (writes bytes to a file, useful for tests). Empty means the default printer.</p>
+<p>Jobs to the same printer are serialised, so two tabs printing at once never interleave.</p>
+<h2 id="security-model">Security model</h2>
+<ul><li>The agent listens on <strong>127.0.0.1 only</strong>. It is never reachable from the network.</li><li><strong>Browser calls</strong> must come from an origin you allowed (<code>thermalink allow</code>). The browser sets the <code>Origin</code> header, and pages cannot fake it.</li><li><strong>Non-browser calls</strong> (scripts, curl, a local backend) must send <code>X-Thermalink-Key: &lt;apiKey&gt;</code> from the config file.</li><li>Requests whose <code>Host</code> is not a loopback name are rejected (protects against DNS rebinding).</li><li><code>https://</code> sites can reach the agent: the SDK sets <code>targetAddressSpace: &#x27;loopback&#x27;</code> automatically and the agent answers the older Private Network Access preflight. Chrome 142+ and Firefox 153+ also ask the user once per site for permission; <code>tl.status()</code> and <code>tl.permission()</code> tell you where that stands (see Troubleshooting).</li></ul>
+<h2 id="config-file">Config file</h2>
+<p><code>thermalink config</code> prints the path and contents. Default locations: <code>%APPDATA%\Thermalink\config.json</code> (Windows), <code>~/Library/Application Support/Thermalink/config.json</code> (macOS), <code>~/.config/Thermalink/config.json</code> (Linux). Override with the env var <code>THERMALINK_CONFIG</code>.</p>
+<pre><code>{
+  &quot;port&quot;: 17777,
+  &quot;allowedOrigins&quot;: [&quot;https://pos.yourapp.com&quot;],
+  &quot;apiKey&quot;: &quot;generated-on-first-run&quot;,
+  &quot;printers&quot;: {
+    &quot;receipt&quot;: { &quot;target&quot;: &quot;EPSON TM-T20III Receipt&quot;, &quot;dots&quot;: 576 },
+    &quot;kitchen&quot;: &quot;tcp://192.168.1.50:9100&quot;,
+    &quot;slip&quot;:    { &quot;target&quot;: &quot;POS-58&quot;, &quot;dots&quot;: 384, &quot;cols&quot;: 32, &quot;mode&quot;: &quot;text&quot; }
+  },
+  &quot;defaultPrinter&quot;: &quot;receipt&quot;,
+  &quot;mode&quot;: &quot;image&quot;,
+  &quot;paperWidth&quot;: 48,
+  &quot;paperDots&quot;: 576,
+  &quot;fontFile&quot;: &quot;&quot;,
+  &quot;fontBoldFile&quot;: &quot;&quot;,
+  &quot;timeoutSeconds&quot;: 10
+}</code></pre>
+<p>Restart the agent after editing the file by hand. The CLI commands (<code>allow</code>, <code>alias</code>, <code>default</code>) also need a restart of a running agent to take effect.</p>
+<p style="margin-top:36px">More docs: <a href="../quickstart/">Quick start</a> · <a href="../troubleshooting/">Troubleshooting</a> · <a href="../compatibility/">Compatibility</a></p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Buy Thermalink</a></div>
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>

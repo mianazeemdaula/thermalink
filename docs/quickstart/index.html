@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thermalink quick start</title>
+<meta name="description" content="Install the Thermalink agent, calibrate your receipt printer, allow your web app and print the first receipt.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/docs/quickstart/">
+<meta property="og:title" content="Thermalink quick start">
+<meta property="og:description" content="Install the Thermalink agent, calibrate your receipt printer, allow your web app and print the first receipt.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../">Thermalink</a>
+<nav><a href="../../docs/quickstart/">Quick start</a><a href="../../docs/reference/">Reference</a><a href="../../docs/troubleshooting/">Troubleshooting</a><a href="../../docs/compatibility/">Compatibility</a><a href="../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap wide">
+<h1>Quick start</h1>
+<h2 id="1-put-the-agent-on-the-computer-that-has-the-printer">1. Put the agent on the computer that has the printer</h2>
+<p>Copy the binary for that OS from <code>bin/</code>:</p>
+<div class="table-wrap"><table><thead><tr><th>OS</th><th>File</th></tr></thead><tbody><tr><td>Windows 10/11 x64</td><td><code>thermalink-windows-amd64.exe</code> (rename to <code>thermalink.exe</code> if you like)</td></tr><tr><td>macOS Apple Silicon</td><td><code>thermalink-darwin-arm64</code></td></tr><tr><td>macOS Intel</td><td><code>thermalink-darwin-amd64</code></td></tr><tr><td>Linux x64 / ARM64 (incl. Raspberry Pi 4/5 64-bit)</td><td><code>thermalink-linux-amd64</code> / <code>thermalink-linux-arm64</code></td></tr></tbody></table></div>
+<p>macOS/Linux: <code>chmod +x thermalink-*</code>. On macOS, the first run may be blocked by Gatekeeper. Right-click the file → Open, or run <code>xattr -d com.apple.quarantine thermalink-darwin-arm64</code>.<br>Windows SmartScreen may warn about an unrecognised app. Choose <strong>More info → Run anyway</strong>. (The binaries are not code-signed. The full source is in <code>src/</code> if you prefer to build it yourself.)</p>
+<h2 id="2-find-and-name-your-printer">2. Find and name your printer</h2>
+<pre><code>thermalink printers</code></pre>
+<p>Measure its real print width (printers differ: 203 vs 180 dpi, 80 vs 58 mm paper, and the printer's own paper-width setting):</p>
+<pre><code>thermalink calibrate &quot;EPSON TM-T20III Receipt&quot;</code></pre>
+<p>The page shows black bars of 384 / 432 / 512 / 576 / 640 dots, each with its number at its right end. <strong>The widest bar whose number is fully readable is your width</strong> (wider bars get clipped by the printer, cutting off the number). A dotted ruler shows how many characters fit per line in text mode.</p>
+<p>Then name the printer with an alias and its width, so your app never hard-codes OS printer names or sizes:</p>
+<pre><code>thermalink alias receipt &quot;EPSON TM-T20III Receipt&quot; --dots 576          # USB printer installed in the OS
+thermalink alias kitchen tcp://192.168.1.50:9100 --dots 512             # network printer
+thermalink alias slip    &quot;POS-58&quot; --dots 384 --mode text                # 58 mm printer using its built-in font
+thermalink alias labels  &quot;4BARCODE 3B-365B&quot;                             # label printer (send raw TSPL/ZPL)
+thermalink default receipt</code></pre>
+<p>Nominal widths: 80 mm paper @203 dpi = <strong>576</strong>, 80 mm @180 dpi = <strong>512</strong>, 58 mm @203 dpi = <strong>384</strong>. Real printers often lose a few dots to their own margins. For example, a BIXOLON SRP-352plusIII (nominally 576) measured <strong>568</strong> usable dots, so always trust the ruler over the spec sheet. Image mode also keeps 8 blank dots on each side by default (<code>--margin</code>).</p>
+<p>USB printers must be installed in the OS first, the normal way: the vendor driver on Windows, or CUPS on macOS/Linux. Thermalink sends bytes as <strong>RAW</strong> through that queue, so the driver doesn't re-render them.</p>
+<h2 id="3-allow-your-web-app">3. Allow your web app</h2>
+<pre><code>thermalink allow https://pos.yourapp.com
+thermalink allow http://localhost:3000      # for development</code></pre>
+<p>Only these origins can print. Any other website gets a 403.</p>
+<h2 id="4-print-a-test-page">4. Print a test page</h2>
+<pre><code>thermalink test</code></pre>
+<h2 id="5-run-it-permanently">5. Run it permanently</h2>
+<pre><code>thermalink install      # starts at login (Windows Task Scheduler / macOS LaunchAgent / systemd --user)
+thermalink uninstall</code></pre>
+<p>Or just run <code>thermalink</code> (no arguments) in a terminal while you develop.</p>
+<h2 id="6-print-from-your-app">6. Print from your app</h2>
+<pre><code>&lt;script src=&quot;thermalink.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+  const tl = new Thermalink();
+
+  async function printReceipt(order) {
+    const status = await tl.status();
+    if (status === &#x27;permission_prompt&#x27;) return alert(&#x27;Click &quot;Allow&quot; in the browser prompt next to the address bar, then print again&#x27;);
+    if (status === &#x27;permission_denied&#x27;) return alert(&#x27;The browser is blocking the printer helper. Allow &quot;Apps on device&quot; in this site&#x27;s settings and reload&#x27;);
+    if (status !== &#x27;running&#x27;) return alert(&#x27;Printer helper is not running on this computer&#x27;);
+    const r = Thermalink.receipt().title(&#x27;MY SHOP&#x27;);
+    order.lines.forEach(l =&gt; r.row(`${l.qty} x ${l.name}`, l.total.toFixed(2)));
+    r.line().row(&#x27;TOTAL&#x27;, order.total.toFixed(2), { bold: true }).cut();
+    await tl.print(r, { printer: &#x27;receipt&#x27; });
+  }
+&lt;/script&gt;</code></pre>
+<p>Or with a bundler: copy <code>sdk/thermalink.js</code> + <code>sdk/thermalink.d.ts</code> into your project and <code>import Thermalink from &#x27;./thermalink.js&#x27;</code>.</p>
+<p>Open <code>examples/playground.html</code> from a local web server (e.g. <code>npx serve .</code> then <code>thermalink allow http://localhost:3000</code>) to design receipts with a live preview.</p>
+<h2 id="paper-width">Paper width</h2>
+<p>Set it per printer with <code>--dots</code> (see step 2). Printers without a profile use the global <code>paperDots</code> (default 576) and <code>paperWidth</code> (default 48) from the config file, and a receipt can override both with <code>dots</code>/<code>width</code>.</p>
+<p style="margin-top:36px">More docs: <a href="../reference/">Reference</a> · <a href="../troubleshooting/">Troubleshooting</a> · <a href="../compatibility/">Compatibility</a></p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Buy Thermalink</a></div>
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESC/POS, ZPL and TSPL cheat sheet: commands with bytes</title>
+<meta name="description" content="ESC/POS commands with hex bytes for receipt printers (cut, cash drawer, QR, barcodes, raster images), plus ZPL and TSPL basics for label printers.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/cheatsheet/">
+<meta property="og:title" content="ESC/POS, ZPL and TSPL cheat sheet: commands with bytes">
+<meta property="og:description" content="ESC/POS commands with hex bytes for receipt printers (cut, cash drawer, QR, barcodes, raster images), plus ZPL and TSPL basics for label printers.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../">Thermalink</a>
+<nav><a href="../docs/quickstart/">Quick start</a><a href="../docs/reference/">Reference</a><a href="../docs/troubleshooting/">Troubleshooting</a><a href="../docs/compatibility/">Compatibility</a><a href="../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap wide">
+
+<h1>ESC/POS, ZPL and TSPL cheat sheet</h1>
+<p class="lead">The printer commands you actually need for receipts and labels, with their bytes. Type in the box to filter.</p>
+<input class="search" id="q" type="search" placeholder="Filter: cut, QR, bold, 1D 56 ..." aria-label="Filter commands">
+<p><span class="tag ok">used</span> means my own agent, Thermalink, sends exactly these bytes and its tests check them. Its receipts print correctly on a BIXOLON SRP-352plusIII, but I have not checked every row on paper one by one. <span class="tag">reference</span> means standard Epson ESC/POS that my agent does not send. Cheaper printers skip some commands, so test on yours.</p>
+
+<h2 id="widths">Paper widths</h2>
+<div class="table-wrap"><table><thead><tr><th>Paper</th><th>Resolution</th><th>Printable dots</th><th>Columns, font A</th><th>Columns, font B</th></tr></thead><tbody>
+<tr><td>80 mm</td><td>203 dpi (8 dots/mm)</td><td>576 (72 mm)</td><td>48</td><td>64</td></tr>
+<tr><td>80 mm</td><td>180 dpi</td><td>512</td><td>42</td><td>56</td></tr>
+<tr><td>58 mm</td><td>203 dpi</td><td>384 (48 mm)</td><td>32</td><td>42</td></tr>
+</tbody></table></div>
+<p>These are nominal. My "576 dot" printer measured 568 usable dots, so print a ruler before trusting the spec sheet.</p>
+
+<h2 id="escpos">ESC/POS (receipt printers)</h2>
+<p>ESC is byte 1B, GS is 1D, DLE is 10. <code>n</code> is one byte you choose. Bytes are in hex.</p>
+<h3>Basics</h3><div class="table-wrap"><table class="cmds"><thead><tr><th>Command</th><th>Bytes (hex)</th><th>What it does</th><th></th></tr></thead><tbody>
+<tr><td><code>ESC @</code></td><td class="hex">1B 40</td><td>Initialise the printer. Clears formatting set by earlier jobs. Send it first.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>LF</code></td><td class="hex">0A</td><td>Print the line buffer and feed one line.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>ESC d n</code></td><td class="hex">1B 64 n</td><td>Print and feed n lines.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>ESC 2</code></td><td class="hex">1B 32</td><td>Default line spacing.</td><td><span class="tag">reference</span></td></tr>
+<tr><td><code>ESC 3 n</code></td><td class="hex">1B 33 n</td><td>Line spacing of n dots.</td><td><span class="tag">reference</span></td></tr>
+</tbody></table></div>
+<h3>Text style</h3><div class="table-wrap"><table class="cmds"><thead><tr><th>Command</th><th>Bytes (hex)</th><th>What it does</th><th></th></tr></thead><tbody>
+<tr><td><code>ESC a n</code></td><td class="hex">1B 61 n</td><td>Align: 0 left, 1 centre, 2 right.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>ESC E n</code></td><td class="hex">1B 45 n</td><td>Bold: 1 on, 0 off.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>ESC - n</code></td><td class="hex">1B 2D n</td><td>Underline: 0 off, 1 thin, 2 thick.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>GS B n</code></td><td class="hex">1D 42 n</td><td>White on black: 1 on, 0 off.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>GS ! n</code></td><td class="hex">1D 21 n</td><td>Character size. High 4 bits = width multiplier minus 1, low 4 bits = height multiplier minus 1. 00 normal, 11 double both, 10 double width, 01 double height.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>ESC M n</code></td><td class="hex">1B 4D n</td><td>Font: 0 = A (12x24), 1 = B (9x17, more columns).</td><td><span class="tag">reference</span></td></tr>
+<tr><td><code>ESC ! n</code></td><td class="hex">1B 21 n</td><td>Older combined mode byte: bit 0 font B, bit 3 bold, bit 4 double height, bit 5 double width, bit 7 underline.</td><td><span class="tag">reference</span></td></tr>
+</tbody></table></div>
+<h3>Characters</h3><div class="table-wrap"><table class="cmds"><thead><tr><th>Command</th><th>Bytes (hex)</th><th>What it does</th><th></th></tr></thead><tbody>
+<tr><td><code>ESC t n</code></td><td class="hex">1B 74 n</td><td>Select the code page. Epson numbering: 0 CP437, 2 CP850, 16 Windows-1252, 17 CP866, 19 CP858 (has the euro sign). Other brands number them differently, so check the self-test page.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>ESC R n</code></td><td class="hex">1B 52 n</td><td>International character set (changes a few ASCII symbols). 0 = USA.</td><td><span class="tag">reference</span></td></tr>
+</tbody></table></div>
+<h3>Cut and cash drawer</h3><div class="table-wrap"><table class="cmds"><thead><tr><th>Command</th><th>Bytes (hex)</th><th>What it does</th><th></th></tr></thead><tbody>
+<tr><td><code>GS V 0</code></td><td class="hex">1D 56 00</td><td>Full cut at the current position. Feed a few lines first or you cut through the last line.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>GS V 1</code></td><td class="hex">1D 56 01</td><td>Partial cut.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>GS V 65 n</code></td><td class="hex">1D 56 41 n</td><td>Feed to the cutter plus n extra steps, then full cut. Use n = 0 if unsure.</td><td><span class="tag">reference</span></td></tr>
+<tr><td><code>GS V 66 n</code></td><td class="hex">1D 56 42 n</td><td>Feed to the cutter plus n extra steps, then partial cut.</td><td><span class="tag">reference</span></td></tr>
+<tr><td><code>ESC p 0 t1 t2</code></td><td class="hex">1B 70 00 19 FA</td><td>Kick the cash drawer on pin 2. t1 and t2 are the pulse on and off times in 2 ms units.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>ESC p 1 t1 t2</code></td><td class="hex">1B 70 01 19 FA</td><td>Kick the cash drawer on pin 5.</td><td><span class="tag ok">used</span></td></tr>
+</tbody></table></div>
+<h3>QR code (GS ( k)</h3><div class="table-wrap"><table class="cmds"><thead><tr><th>Command</th><th>Bytes (hex)</th><th>What it does</th><th></th></tr></thead><tbody>
+<tr><td><code>Model</code></td><td class="hex">1D 28 6B 04 00 31 41 32 00</td><td>Select QR model 2.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>Module size</code></td><td class="hex">1D 28 6B 03 00 31 43 n</td><td>Dot size of one module, n = 1 to 16.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>Error correction</code></td><td class="hex">1D 28 6B 03 00 31 45 n</td><td>n = 48 L, 49 M, 50 Q, 51 H.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>Store data</code></td><td class="hex">1D 28 6B pL pH 31 50 30 d1...dk</td><td>pL + pH x 256 = k + 3, where k is the number of data bytes.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>Print</code></td><td class="hex">1D 28 6B 03 00 31 51 30</td><td>Print the stored symbol.</td><td><span class="tag ok">used</span></td></tr>
+</tbody></table></div>
+<h3>Barcodes (GS k)</h3><div class="table-wrap"><table class="cmds"><thead><tr><th>Command</th><th>Bytes (hex)</th><th>What it does</th><th></th></tr></thead><tbody>
+<tr><td><code>GS h n</code></td><td class="hex">1D 68 n</td><td>Barcode height in dots.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>GS w n</code></td><td class="hex">1D 77 n</td><td>Module width, n = 2 to 6.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>GS H n</code></td><td class="hex">1D 48 n</td><td>Human-readable text: 0 none, 1 above, 2 below, 3 both.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>CODE128</code></td><td class="hex">1D 6B 49 n d1...dn</td><td>Start the data with 7B 42 (&quot;{B&quot;) to select code set B.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>EAN-13</code></td><td class="hex">1D 6B 43 n d1...dn</td><td>n = 12 or 13 digits.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>EAN-8</code></td><td class="hex">1D 6B 44 n d1...dn</td><td>n = 7 or 8 digits.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>UPC-A</code></td><td class="hex">1D 6B 41 n d1...dn</td><td>n = 11 or 12 digits.</td><td><span class="tag ok">used</span></td></tr>
+<tr><td><code>CODE39</code></td><td class="hex">1D 6B 45 n d1...dn</td><td>Digits, capitals and a few symbols.</td><td><span class="tag ok">used</span></td></tr>
+</tbody></table></div>
+<h3>Images</h3><div class="table-wrap"><table class="cmds"><thead><tr><th>Command</th><th>Bytes (hex)</th><th>What it does</th><th></th></tr></thead><tbody>
+<tr><td><code>GS v 0</code></td><td class="hex">1D 76 30 00 xL xH yL yH d1...dk</td><td>Raster image. xL + xH x 256 = width in bytes (dots / 8). yL + yH x 256 = height in dots. One bit per dot, 1 = black, most significant bit on the left. Send tall images in bands.</td><td><span class="tag ok">used</span></td></tr>
+</tbody></table></div>
+<h3>Status</h3><div class="table-wrap"><table class="cmds"><thead><tr><th>Command</th><th>Bytes (hex)</th><th>What it does</th><th></th></tr></thead><tbody>
+<tr><td><code>DLE EOT n</code></td><td class="hex">10 04 n</td><td>Real-time status: 1 printer, 2 offline cause, 3 error cause, 4 paper sensor. The printer answers with one byte, so you need a two-way connection.</td><td><span class="tag">reference</span></td></tr>
+<tr><td><code>GS r 1</code></td><td class="hex">1D 72 01</td><td>Paper sensor status.</td><td><span class="tag">reference</span></td></tr>
+</tbody></table></div>
+
+<h3>A whole receipt in bytes</h3>
+<pre><code>const ESC = 0x1b, GS = 0x1d;
+const text = s => [...new TextEncoder().encode(s)];   // ASCII only; see the code page row above
+
+const bytes = new Uint8Array([
+  ESC, 0x40,                      // initialise
+  ESC, 0x61, 1,                   // centre
+  GS, 0x21, 0x11,                 // double width and height
+  ...text('BLUE DOOR CAFE\n'),
+  GS, 0x21, 0x00,                 // normal size
+  ESC, 0x61, 0,                   // left
+  ...text('Flat white x2        8.00\n'),
+  ESC, 0x45, 1,                   // bold on
+  ...text('TOTAL                8.00\n'),
+  ESC, 0x45, 0,                   // bold off
+  ESC, 0x64, 3,                   // feed 3 lines so the cut clears the text
+  GS, 0x56, 0x00                  // full cut
+]);</code></pre>
+<p>Getting those bytes from a web page to the printer is the hard part. <a href="../">Thermalink</a> does that, and builds the bytes from JSON so you do not write this by hand.</p>
+
+<h2 id="zpl">ZPL (Zebra label printers)</h2>
+<p>Plain text commands. Positions are in dots: 203 dpi is 8 dots per mm. I have not printed these on a Zebra; they follow Zebra's programming guide.</p>
+<div class="table-wrap"><table class="cmds"><thead><tr><th>Command</th><th>What it does</th></tr></thead><tbody>
+<tr><td><code>^XA ... ^XZ</code></td><td>Start and end of a label. Everything goes between them.</td></tr>
+<tr><td><code>^PW n</code></td><td>Label width in dots.</td></tr>
+<tr><td><code>^LL n</code></td><td>Label length in dots.</td></tr>
+<tr><td><code>^LH x,y</code></td><td>Label home: moves the origin for every field.</td></tr>
+<tr><td><code>^FO x,y</code></td><td>Field origin: where the next field goes, in dots from the top left.</td></tr>
+<tr><td><code>^FD text ^FS</code></td><td>Field data, then field separator. Every field ends with ^FS.</td></tr>
+<tr><td><code>^CF0,h</code></td><td>Default font 0 at height h dots.</td></tr>
+<tr><td><code>^A0N,h,w</code></td><td>Font 0, normal rotation, height h and width w, for the next field.</td></tr>
+<tr><td><code>^FB w,lines,,align</code></td><td>Field block: wrap text to width w. Align is L, C, R or J.</td></tr>
+<tr><td><code>^BY w,r,h</code></td><td>Barcode defaults: module width, wide to narrow ratio, height.</td></tr>
+<tr><td><code>^BCN,h,Y,N,N</code></td><td>Code 128 barcode, height h, with the text printed below.</td></tr>
+<tr><td><code>^BQN,2,m</code></td><td>QR code, model 2, magnification m. The data starts with a prefix: ^FDQA,your-data^FS.</td></tr>
+<tr><td><code>^GB w,h,t</code></td><td>Box or line: width, height, line thickness.</td></tr>
+<tr><td><code>^FR</code></td><td>Reverse the next field (white on black where it overlaps).</td></tr>
+<tr><td><code>^CI28</code></td><td>Read field data as UTF-8.</td></tr>
+<tr><td><code>^PQ n</code></td><td>Print n copies.</td></tr>
+</tbody></table></div>
+<pre><code>^XA
+^CF0,40
+^FO40,40^FDShip to: Jane Doe^FS
+^CF0,30
+^FO40,90^FD221B Baker Street, London^FS
+^FO40,150^BY3^BCN,120,Y,N,N^FD1Z999AA10123456784^FS
+^FO40,320^BQN,2,6^FDQA,https://example.com/track/1Z999AA10123456784^FS
+^XZ</code></pre>
+
+<h2 id="tspl">TSPL (TSC, 4BARCODE, Xprinter label printers)</h2>
+<p>One command per line, each line ending with CR LF. I have not printed these on a label printer; they follow the TSPL manual.</p>
+<div class="table-wrap"><table class="cmds"><thead><tr><th>Command</th><th>What it does</th></tr></thead><tbody>
+<tr><td><code>SIZE 50 mm, 30 mm</code></td><td>Label width and height.</td></tr>
+<tr><td><code>GAP 2 mm, 0 mm</code></td><td>Gap between labels and its offset.</td></tr>
+<tr><td><code>DIRECTION 1</code></td><td>Print direction, 0 or 1.</td></tr>
+<tr><td><code>CLS</code></td><td>Clear the image buffer. Send it before drawing each label.</td></tr>
+<tr><td><code>TEXT x,y,&quot;font&quot;,rot,xmul,ymul,&quot;content&quot;</code></td><td>Text at x,y in dots. Fonts &quot;1&quot; to &quot;8&quot; are built in; rot is 0, 90, 180 or 270.</td></tr>
+<tr><td><code>BARCODE x,y,&quot;128&quot;,h,human,rot,narrow,wide,&quot;content&quot;</code></td><td>Barcode. human = 1 prints the text below.</td></tr>
+<tr><td><code>QRCODE x,y,ECC,cell,mode,rot,&quot;content&quot;</code></td><td>QR code. ECC is L, M, Q or H; cell is the module size 1 to 10; mode A is automatic.</td></tr>
+<tr><td><code>BAR x,y,w,h</code></td><td>Filled bar or line.</td></tr>
+<tr><td><code>BOX x,y,xend,yend,thickness</code></td><td>Rectangle outline.</td></tr>
+<tr><td><code>DENSITY n</code></td><td>Darkness, 0 to 15.</td></tr>
+<tr><td><code>SPEED n</code></td><td>Print speed in inches per second.</td></tr>
+<tr><td><code>PRINT sets,copies</code></td><td>Print the label. Always the last line.</td></tr>
+</tbody></table></div>
+<pre><code>SIZE 50 mm, 30 mm
+GAP 2 mm, 0 mm
+DIRECTION 1
+CLS
+TEXT 20,20,"3",0,1,1,"Organic Honey 500g"
+TEXT 20,60,"2",0,1,1,"Price: 9.99"
+BARCODE 20,100,"128",70,1,0,2,2,"SKU-000123"
+PRINT 1,1</code></pre>
+
+<p>Last checked 11 October 2026. Found a mistake? Tell me through the <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad page</a>.</p>
+<script>
+document.getElementById('q').addEventListener('input', function () {
+  var q = this.value.trim().toLowerCase();
+  document.querySelectorAll('table.cmds tbody tr').forEach(function (tr) {
+    tr.hidden = q && tr.textContent.toLowerCase().indexOf(q) === -1;
+  });
+});
+</script>
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thermalink: silent receipt and label printing for web apps</title>
+<meta name="description" content="Print receipts and labels from a web app with no print dialog. A small local agent plus a JavaScript SDK. One-time price, source included.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/">
+<meta property="og:title" content="Thermalink: silent receipt and label printing for web apps">
+<meta property="og:description" content="Print receipts and labels from a web app with no print dialog. A small local agent plus a JavaScript SDK. One-time price, source included.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="">Thermalink</a>
+<nav><a href="docs/quickstart/">Quick start</a><a href="docs/reference/">Reference</a><a href="docs/troubleshooting/">Troubleshooting</a><a href="docs/compatibility/">Compatibility</a><a href="cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap">
+
+<h1>Silent receipt and label printing from any web app</h1>
+<p class="lead">Your web app sends JSON. A small agent on the shop computer prints it. No print dialog, no Java, no yearly fee.</p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Buy Thermalink, from $49</a><a class="btn ghost" href="docs/quickstart/">Read the quick start</a></div>
+<pre><code>const tl = new Thermalink();
+
+await tl.print(
+  Thermalink.receipt()
+    .title('BLUE DOOR CAFE')
+    .row('Flat white x2', '8.00')
+    .row('TOTAL', '8.00', { bold: true })
+    .qr('https://example.com/r/A1B2C3')
+    .cut()
+);</code></pre>
+<img class="hero-img" src="assets/cover.png" alt="Thermalink: a receipt rendered by the agent next to the JavaScript that produced it" width="1280" height="720" loading="lazy">
+
+<h2>The problem it solves</h2>
+<p>If you build a POS, restaurant, retail or warehouse web app, you have met this wall. <code>window.print()</code> shows a dialog and cannot cut paper or open the cash drawer. WebUSB only works in Chromium browsers and, on Windows, is refused by the printer's own driver. QZ Tray works, but it bundles Java and its certificate tier is a yearly fee.</p>
+<p>Thermalink is one small program that runs next to the printer, plus an 8 KB JavaScript SDK.</p>
+
+<h2>What it does</h2>
+<div class="grid">
+<div class="card"><h3>Same receipt on every brand</h3><p>Image mode draws the receipt as a bitmap at your printer's real width, so it does not depend on built-in fonts, column counts or code pages.</p></div>
+<div class="card"><h3>Calibrate in two minutes</h3><p><code>thermalink calibrate</code> prints width bars and a ruler. Save the width per printer and the layout fills the paper.</p></div>
+<div class="card"><h3>Receipt layout in JSON</h3><p>Rows, wrapping columns, dividers, QR codes, barcodes, logos, paper cut and cash drawer kick.</p></div>
+<div class="card"><h3>USB, network and labels</h3><p>USB printers through the OS print queue, network printers on port 9100, and raw ZPL, TSPL or EPL for label printers.</p></div>
+<div class="card"><h3>Locked to your site</h3><p>Listens on localhost only. An origin allowlist decides which websites may print, with an API key for scripts.</p></div>
+<div class="card"><h3>Source included</h3><p>The full Go source and tests ship with it, so you can audit it or build it yourself.</p></div>
+</div>
+
+<h2>How it compares</h2>
+<div class="table-wrap"><table>
+<thead><tr><th></th><th>Thermalink</th><th>QZ Tray</th><th>window.print()</th><th>WebUSB / Web Serial</th></tr></thead>
+<tbody>
+<tr><td>Silent, no dialog</td><td>Yes</td><td>Yes (warning prompts unless you buy a certificate)</td><td>No</td><td>Yes</td></tr>
+<tr><td>Price</td><td>One-time</td><td>$599/year for premium/certificate (buy.qz.io, October 2026)</td><td>Free</td><td>Free</td></tr>
+<tr><td>Runtime to install</td><td>None, a single ~7 MB file</td><td>Bundled Java</td><td>None</td><td>None</td></tr>
+<tr><td>Browsers</td><td>All modern</td><td>All</td><td>All</td><td>Chromium only</td></tr>
+<tr><td>USB printer still usable by Windows</td><td>Yes</td><td>Yes</td><td>Yes</td><td>No (driver conflict)</td></tr>
+<tr><td>Network printers (9100)</td><td>Yes</td><td>Yes</td><td>Through the OS</td><td>No</td></tr>
+<tr><td>Cut, drawer, QR, barcodes, logos</td><td>Yes</td><td>Yes, you build the bytes</td><td>No, or unreliable</td><td>You build the bytes</td></tr>
+<tr><td>JSON receipt layout</td><td>Built in</td><td>No</td><td>CSS</td><td>No</td></tr>
+</tbody></table></div>
+
+<h2>Tested, honestly</h2>
+<p>The ESC/POS and raster output, layout, QR, barcode and image encoding, printer profiles and security checks are covered by automated tests. On real hardware it has been tested end to end (Chrome, agent, printer) on <strong>one printer: a BIXOLON SRP-352plusIII on Windows 11</strong>.</p>
+<p>Other ESC/POS printers use the same standard commands and are expected to work, but have not been individually tested. The macOS and Linux binaries are built and use CUPS, but have not been hardware-tested. The <a href="docs/compatibility/">compatibility page</a> lists exactly what has been verified.</p>
+<div class="notice"><strong>Not for you if</strong> you only print A4 or Letter documents (the browser's print dialog is fine for that), or the printer is on a different network from the computer running the agent.</div>
+
+<h2>Price</h2>
+<div class="price">
+<div class="card"><h3>Standard</h3><strong class="amount">$49</strong><p>One application. Install the agent on unlimited computers of that app's users.</p></div>
+<div class="card"><h3>Unlimited / Agency</h3><strong class="amount">$149</strong><p>All your apps and client projects, and you may rebrand the agent inside your own installers.</p></div>
+</div>
+<p>One-time payment, including all 1.x updates. Binaries are not code-signed, so Windows SmartScreen and macOS Gatekeeper will ask once.</p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Buy on Gumroad</a><a class="btn ghost" href="docs/reference/">See the JSON reference</a></div>
+
+<h2>Free things</h2>
+<ul>
+<li><a href="cheatsheet/">ESC/POS, ZPL and TSPL cheat sheet</a>: the commands with their bytes, on one page.</li>
+<li><a href="https://github.com/mianazeemdaula/receipt-fit">receipt-fit</a>: a tiny script that makes <code>window.print()</code> use the receipt's real height.</li>
+<li>Only need <code>window.print()</code>? The <a href="https://7207381545467.gumroad.com/l/receipt-print-kit">Receipt Print Kit</a> ($9) has the stylesheet and eight templates.</li>
+</ul>
+
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>

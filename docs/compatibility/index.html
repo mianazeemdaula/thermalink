@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thermalink compatibility</title>
+<meta name="description" content="Which printers, operating systems and browsers Thermalink has actually been tested on, and what is expected to work.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/docs/compatibility/">
+<meta property="og:title" content="Thermalink compatibility">
+<meta property="og:description" content="Which printers, operating systems and browsers Thermalink has actually been tested on, and what is expected to work.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../">Thermalink</a>
+<nav><a href="../../docs/quickstart/">Quick start</a><a href="../../docs/reference/">Reference</a><a href="../../docs/troubleshooting/">Troubleshooting</a><a href="../../docs/compatibility/">Compatibility</a><a href="../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap wide">
+<h1>Compatibility</h1>
+<h2 id="tested-on-real-hardware">Tested on real hardware</h2>
+<div class="table-wrap"><table><thead><tr><th>Printer</th><th>Connection</th><th>OS</th><th>Browser</th><th>Result</th><th>Date</th></tr></thead><tbody><tr><td>BIXOLON SRP-352plusIII</td><td>USB via Windows print queue (RAW)</td><td>Windows 11 Pro</td><td>Chrome 155</td><td>Text and image mode printed. Calibrated usable width <strong>568 dots</strong> (nominal 576), 48 text columns</td><td>2026-10-09</td></tr></tbody></table></div>
+<p>This list only includes printers that have actually been tested. If you test another model, the result is welcome and will be added here.</p>
+<h2 id="expected-to-work-by-standard-not-individually-tested">Expected to work (by standard, not individually tested)</h2>
+<p>Thermalink emits standard Epson ESC/POS commands (ESC @, ESC a, ESC E, GS !, GS V, ESC p, GS ( k for QR, GS k for barcodes, GS v 0 for raster images). Printers that implement ESC/POS are expected to work. That includes most models from Epson (TM series), Bixolon, Xprinter, Rongta, HPRT, Sewoo, Citizen (ESC/POS mode), and generic 58/80 mm "POS-58 / POS-80" printers.</p>
+<p>Exceptions to know about:</p>
+<ul><li><strong>Star Micronics</strong> printers in <em>Star Line Mode</em> need to be switched to ESC/POS emulation (most current Star models support it via their config utility).</li><li>Some very cheap printers lack native QR support. Use an <code>image</code> QR instead (see TROUBLESHOOTING.md).</li></ul>
+<h2 id="label-printers">Label printers</h2>
+<p>Label printers get your bytes untouched (<code>raw</code>). You write ZPL (Zebra), TSPL (TSC, 4BARCODE, Xprinter label models) or EPL. Samples are in <code>examples/labels/</code>.</p>
+<h2 id="platforms">Platforms</h2>
+<div class="table-wrap"><table><thead><tr><th>OS</th><th>Transport for USB printers</th><th>Built binary</th></tr></thead><tbody><tr><td>Windows 10/11 x64</td><td>Windows spooler, RAW datatype</td><td>✅ tested</td></tr><tr><td>macOS 12+ (Intel/Apple Silicon)</td><td>CUPS <code>lp -o raw</code></td><td>built, not hardware-tested</td></tr><tr><td>Linux x64/arm64 (incl. Raspberry Pi)</td><td>CUPS <code>lp -o raw</code></td><td>built, not hardware-tested</td></tr><tr><td>Any OS</td><td>Network printers via TCP 9100</td><td>✅ tested with a TCP endpoint in automated tests</td></tr></tbody></table></div>
+<p style="margin-top:36px">More docs: <a href="../quickstart/">Quick start</a> · <a href="../reference/">Reference</a> · <a href="../troubleshooting/">Troubleshooting</a></p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Buy Thermalink</a></div>
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>
