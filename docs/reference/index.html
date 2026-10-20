@@ -50,7 +50,8 @@
   &quot;printers&quot;: {
     &quot;receipt&quot;: { &quot;target&quot;: &quot;EPSON TM-T20III Receipt&quot;, &quot;dots&quot;: 576 },
     &quot;kitchen&quot;: &quot;tcp://192.168.1.50:9100&quot;,
-    &quot;slip&quot;:    { &quot;target&quot;: &quot;POS-58&quot;, &quot;dots&quot;: 384, &quot;cols&quot;: 32, &quot;mode&quot;: &quot;text&quot; }
+    &quot;slip&quot;:    { &quot;target&quot;: &quot;POS-58&quot;, &quot;dots&quot;: 384, &quot;cols&quot;: 32, &quot;mode&quot;: &quot;text&quot; },
+    &quot;kiosk&quot;:   { &quot;target&quot;: &quot;NP-3511&quot;, &quot;dots&quot;: 576, &quot;commands&quot;: &quot;nippon&quot; }
   },
   &quot;defaultPrinter&quot;: &quot;receipt&quot;,
   &quot;mode&quot;: &quot;image&quot;,
@@ -60,6 +61,10 @@
   &quot;fontBoldFile&quot;: &quot;&quot;,
   &quot;timeoutSeconds&quot;: 10
 }</code></pre>
+<h3 id="command-sets">Command sets</h3>
+<p>A printer profile's <code>commands</code> picks the printer language. <code>escpos</code> (the default) is Epson ESC/POS. <code>nippon</code> is for NIPPON PRIMEX NP-2511 / NP-3511 kiosk printers, which use their own commands: images are sent as <code>ESC b</code> rasters instead of <code>GS v 0</code>, and cuts are <code>ESC i</code> (full) / <code>ESC m</code> (partial) instead of <code>GS V</code>. With <code>nippon</code>:</p>
+<ul><li>only image mode is available (text mode returns an error),</li><li><code>dots</code> can be at most 576 (<code>ESC b</code> takes 72 bytes per row),</li><li>the <code>drawer</code> block returns an error (the command set has none),</li><li><code>thermalink calibrate</code> doesn't apply (it prints 640-dot ESC/POS rasters); set <code>--dots 576</code>, or less if the right edge is clipped.</li></ul>
+<p><code>thermalink alias kiosk &quot;NP-3511&quot; --dots 576 --commands nippon</code></p>
 <p>Restart the agent after editing the file by hand. The CLI commands (<code>allow</code>, <code>alias</code>, <code>default</code>) also need a restart of a running agent to take effect.</p>
 <p style="margin-top:36px">More docs: <a href="../quickstart/">Quick start</a> · <a href="../troubleshooting/">Troubleshooting</a> · <a href="../compatibility/">Compatibility</a></p>
 <div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Buy Thermalink</a></div>
