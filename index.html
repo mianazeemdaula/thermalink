@@ -48,11 +48,12 @@ await tl.print(
 </div>
 
 <h2>How it compares</h2>
+<p>A longer comparison, including PrintNode and Chrome kiosk printing, is in <a href="guides/print-receipt-from-browser-without-dialog/">this guide</a>.</p>
 <div class="table-wrap"><table>
 <thead><tr><th></th><th>Thermalink</th><th>QZ Tray</th><th>window.print()</th><th>WebUSB / Web Serial</th></tr></thead>
 <tbody>
 <tr><td>Silent, no dialog</td><td>Yes</td><td>Yes (warning prompts unless you buy a certificate)</td><td>No</td><td>Yes</td></tr>
-<tr><td>Price</td><td>One-time</td><td>$599/year for premium/certificate (buy.qz.io, October 2026)</td><td>Free</td><td>Free</td></tr>
+<tr><td>Price</td><td>One-time</td><td>Free (LGPL); $749/year Premium Support with trusted certificate (qz.io, 20 November 2026)</td><td>Free</td><td>Free</td></tr>
 <tr><td>Runtime to install</td><td>None, a single ~7 MB file</td><td>Bundled Java</td><td>None</td><td>None</td></tr>
 <tr><td>Browsers</td><td>All modern</td><td>All</td><td>All</td><td>Chromium only</td></tr>
 <tr><td>USB printer still usable by Windows</td><td>Yes</td><td>Yes</td><td>Yes</td><td>No (driver conflict)</td></tr>
@@ -76,6 +77,7 @@ await tl.print(
 
 <h2>Free things</h2>
 <ul>
+<li><a href="guides/print-receipt-from-browser-without-dialog/">Every way to print a receipt from a web app without the print dialog</a>: kiosk printing, WebUSB, QZ Tray, PrintNode and others, with prices.</li>
 <li><a href="cheatsheet/">ESC/POS, ZPL and TSPL cheat sheet</a>: the commands with their bytes, on one page.</li>
 <li><a href="https://github.com/mianazeemdaula/receipt-fit">receipt-fit</a>: a tiny script that makes <code>window.print()</code> use the receipt's real height.</li>
 <li>Only need <code>window.print()</code>? The <a href="https://7207381545467.gumroad.com/l/receipt-print-kit">Receipt Print Kit</a> ($9) has the stylesheet and eight templates.</li>

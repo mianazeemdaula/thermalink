@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Print to a thermal receipt printer from a web app without the print dialog (2026)</title>
+<meta name="description" content="Six ways to print receipts silently from a browser: Chrome kiosk printing, WebUSB, QZ Tray, PrintNode, a local agent or your own. Costs and limits compared.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/guides/print-receipt-from-browser-without-dialog/">
+<meta property="og:title" content="Print to a thermal receipt printer from a web app without the print dialog (2026)">
+<meta property="og:description" content="Six ways to print receipts silently from a browser: Chrome kiosk printing, WebUSB, QZ Tray, PrintNode, a local agent or your own. Costs and limits compared.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../">Thermalink</a>
+<nav><a href="../../docs/quickstart/">Quick start</a><a href="../../docs/reference/">Reference</a><a href="../../docs/troubleshooting/">Troubleshooting</a><a href="../../docs/compatibility/">Compatibility</a><a href="../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap">
+
+<h1>How to print to a thermal receipt printer from a web app without the print dialog</h1>
+<p class="lead">Every way I know to do it in 2026, what each one costs, and where each one breaks. Prices checked on 20 November 2026.</p>
+
+<h2>The short answer</h2>
+<p>A web page cannot send bytes to a printer on its own. <code>window.print()</code> always goes through the browser's print dialog, and the browser does not let a page skip it. To print silently you need one of three things: a browser started with a special flag, direct device access (WebUSB or Web Serial), or a small program on the computer that the page talks to. That last one is what most POS web apps end up using.</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Option</th><th>Silent</th><th>Cut / drawer</th><th>Browsers</th><th>Cost</th><th>Good for</th></tr></thead>
+<tbody>
+<tr><td><a href="#kiosk">Chrome <code>--kiosk-printing</code></a></td><td>Yes, to the default printer</td><td>Only what the driver does</td><td>Chrome / Edge, per computer</td><td>Free</td><td>One till you set up yourself</td></tr>
+<tr><td><a href="#webusb">WebUSB / Web Serial</a></td><td>Yes</td><td>Yes, you write the bytes</td><td>Chromium only</td><td>Free</td><td>Kiosks you fully control</td></tr>
+<tr><td><a href="#qz">QZ Tray</a></td><td>Yes</td><td>Yes, you write the bytes</td><td>All</td><td>Free (LGPL); $749/year Premium Support with trusted certificate</td><td>Teams that want a mature open-source agent</td></tr>
+<tr><td><a href="#printnode">PrintNode</a></td><td>Yes, through their cloud</td><td>Raw jobs supported</td><td>Any (server-side API)</td><td>Free for 50 prints/month; $9 to $99/month</td><td>Printing from your server to many sites</td></tr>
+<tr><td><a href="#thermalink">Thermalink</a> (mine)</td><td>Yes</td><td>Yes, from JSON</td><td>All modern</td><td>$49 one-time</td><td>Web POS apps that want receipt layout done for them</td></tr>
+<tr><td><a href="#diy">Write your own agent</a></td><td>Yes</td><td>Yes</td><td>All</td><td>Your time</td><td>Teams with time and one printer model</td></tr>
+</tbody></table></div>
+
+<h2 id="kiosk">1. Chrome with --kiosk-printing</h2>
+<p>Start Chrome or Edge with <code>--kiosk-printing</code> (often together with <code>--kiosk</code>) and <code>window.print()</code> goes straight to the default printer with no preview. Shops and shipping tools document this for one-click label printing, for example <a href="https://help.skulabs.com/en/articles/4151283-print-locally-without-a-print-preview-popup-using-chrome-on-windows">SKULabs' Windows guide</a>.</p>
+<p>Where it breaks: it is set per computer, on the shortcut, so every till needs the change and it is lost when someone opens Chrome another way. It always uses the default printer, so a receipt printer and a label printer on one PC is awkward. Layout still goes through CSS and the driver, which on thermal paper is its own fight (see <a href="https://dev.to/azeem_ullah/the-receipt-css-everyone-copies-page-size-80mm-auto-does-nothing-in-chrome-19o0">why <code>@page { size: 80mm auto }</code> does nothing in Chrome</a>). There is also an old <a href="https://groups.google.com/a/chromium.org/g/chromium-bugs/c/BW_OjJSj4qk">Chromium report</a> of the flag being ignored without <code>--kiosk</code>, so test it on your Chrome version.</p>
+
+<h2 id="webusb">2. WebUSB or Web Serial</h2>
+<p>The page talks to the printer directly and sends ESC/POS bytes, so cut, cash drawer and QR codes all work. No install.</p>
+<p>Where it breaks: Chromium browsers only (no Firefox, no Safari). The user has to pick the device once. On Windows, a USB printer with its normal driver is already claimed by the system, and WebUSB gets <code>Access denied</code>; I wrote up <a href="https://dev.to/azeem_ullah/webusb-says-access-denied-to-your-receipt-printer-on-windows-here-is-who-has-it-5hl2">who holds the device and the three workarounds</a>. Every workaround stops the printer working with normal Windows printing. Network printers on port 9100 are out of reach.</p>
+
+<h2 id="qz">3. QZ Tray</h2>
+<p>The best-known option, and a good one. A desktop agent that the page talks to over a local WebSocket. It sends raw ESC/POS, ZPL and EPL, and prints PDFs, images and HTML. <a href="https://qz.io/">qz.io</a> says the source is LGPL, that it is free to download and use, and that all versions can be used in commercial software.</p>
+<p>The paid part: Premium Support is <strong>$749 a year</strong> (annual renewal at a reduced rate) and Company Branded is <strong>$3,499 a year</strong>, both per qz.io on 20 November 2026. Premium includes the <em>trusted dialog certificate</em> and message signing, which is what makes printing from your site stop asking the user for permission. Without it you use community support and self-signed keys.</p>
+<p>Things to know: it ships with its own Java runtime, and you build the printer bytes yourself (or with a library), so receipt layout, column widths and code pages are still your job.</p>
+
+<h2 id="printnode">4. PrintNode</h2>
+<p>A different design: you install their client on the shop computer, and your <em>server</em> sends print jobs through PrintNode's cloud API. Nothing runs in the browser. Their <a href="https://www.printnode.com/en/pricing">pricing page</a> on 20 November 2026: Lite free (50 prints a month, 1 computer), Essential $9/month (5,000 prints, 3 computers), Standard $29/month (25,000 prints, 5 computers), Premium $99/month (200,000 prints, unlimited computers), with yearly plans and integrator accounts too.</p>
+<p>Good when the print is triggered from your back end (an online order printing in the kitchen). The cost grows with prints and computers, and jobs go through a third party and the internet, so printing stops when the shop's connection does.</p>
+
+<h2 id="thermalink">5. Thermalink (my product)</h2>
+<p>I built Thermalink because I wanted the QZ Tray model without the yearly fee and without writing ESC/POS by hand. It is a single small Go program that runs on the shop computer and listens on <code>127.0.0.1</code>, plus an 8 KB JavaScript SDK. You send the receipt as JSON (rows, columns, QR, barcode, logo, cut, drawer) and the agent draws it as an image at the printer's real width, so it looks the same on every brand and does not depend on code pages.</p>
+<pre><code>const tl = new Thermalink();
+await tl.print(
+  Thermalink.receipt()
+    .title('BLUE DOOR CAFE')
+    .row('Flat white x2', '8.00')
+    .row('TOTAL', '8.00', { bold: true })
+    .cut()
+);</code></pre>
+<p><strong>$49 one-time</strong> for one app, <strong>$149</strong> for all your apps and client projects, Go source included. Honest limits: it has been tested end to end on one real printer (a BIXOLON SRP-352plusIII on Windows 11); other ESC/POS printers use the same commands but have not each been tested; the macOS and Linux builds have not been hardware-tested; the binaries are not code-signed. The <a href="../../docs/compatibility/">compatibility page</a> has the details.</p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Buy Thermalink, $49</a><a class="btn ghost" href="../../docs/quickstart/">Read the quick start</a></div>
+
+<h2 id="diy">6. Write your own small agent</h2>
+<p>Perfectly doable if you have one printer model: a local HTTP server that accepts bytes and writes them to the printer (RAW to the Windows spooler, port 9100 for network printers, <code>lp -o raw</code> on macOS and Linux). The parts that take the time are the ones around it: which websites may print, raster images for logos and non-Latin text, paper width per printer, and the browser permission prompt below. The free <a href="../../cheatsheet/">ESC/POS, ZPL and TSPL cheat sheet</a> has the bytes.</p>
+
+<h2>One thing that affects every local agent: Chrome's local network prompt</h2>
+<p>Since Chrome 142 (and Firefox 153), a public website that calls a program on <code>localhost</code> triggers a permission prompt. Until the user clicks Allow, requests just hang, which looks exactly like "the agent is not installed". This applies to QZ Tray, Thermalink and anything you write yourself. The <a href="../../docs/troubleshooting/">troubleshooting page</a> covers how to detect it and the policy that pre-allows your site on managed computers, and I tested it in detail in <a href="https://dev.to/azeem_ullah/agent-not-running-when-it-is-running-chromes-local-network-prompt-and-localhost-helpers-4nll">this write-up</a>.</p>
+
+<h2>What I would pick</h2>
+<ul>
+<li>One till, your own shop, printing receipts that already look fine: <strong>Chrome <code>--kiosk-printing</code></strong>.</li>
+<li>Prints triggered by your server, many locations, OK with a monthly bill: <strong>PrintNode</strong>.</li>
+<li>Need PDFs, many printer types, or a company-backed support contract: <strong>QZ Tray</strong> with Premium Support.</li>
+<li>A web POS that prints receipts and labels and you want the layout handled with a one-time price: <strong>Thermalink</strong>.</li>
+</ul>
+<p>Just want <code>window.print()</code> receipts to come out the right size? The <a href="https://7207381545467.gumroad.com/l/receipt-print-kit">Receipt Print Kit</a> ($9) has the stylesheet and eight templates for 58 mm and 80 mm.</p>
+<p style="color:var(--muted);font-size:15px">Prices and facts checked on 20 November 2026 from the linked pages. Corrections welcome.</p>
+
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>
