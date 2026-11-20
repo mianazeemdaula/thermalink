@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESC/POS viewer: preview receipt printer bytes online (free, private)</title>
+<meta name="description" content="Paste ESC/POS bytes (hex, base64) or drop a .bin file to see the printed receipt, every command decoded, and warnings for UTF-8, code page and Kanji mode mistakes. Runs in your browser.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/tools/escpos-viewer/">
+<meta property="og:title" content="ESC/POS viewer: preview receipt printer bytes online (free, private)">
+<meta property="og:description" content="Paste ESC/POS bytes (hex, base64) or drop a .bin file to see the printed receipt, every command decoded, and warnings for UTF-8, code page and Kanji mode mistakes. Runs in your browser.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../assets/site.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'">
+<link rel="stylesheet" href="tool.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../">Thermalink</a>
+<nav><a href="../../docs/quickstart/">Quick start</a><a href="../../docs/reference/">Reference</a><a href="../../docs/troubleshooting/">Troubleshooting</a><a href="../../docs/compatibility/">Compatibility</a><a href="../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap wide">
+
+<h1>ESC/POS viewer: see what your receipt printer will print</h1>
+<p class="lead">Paste the bytes your app sends to a thermal printer, as hex, base64 or <code>\x1b</code>-style text, or drop a <code>.bin</code> file. You get a picture of the receipt, every command decoded, and warnings for the usual mistakes. It all runs in your browser and the bytes never leave this page.</p>
+
+<div class="ev-grid">
+<div class="ev-panel">
+<div class="ev-row">
+<label>Example <select id="ev-example"><option value="">Choose…</option></select></label>
+<label class="ev-file">Open file <input id="ev-file" type="file" hidden></label>
+</div>
+<div class="ev-drop" id="ev-drop"><textarea id="ev-input" spellcheck="false" aria-label="Printer bytes" placeholder="1B 40 48 65 6C 6C 6F 0A 1D 56 00&#10;&#10;or base64, or text like \x1b@Hello\n, or drop a .bin / .prn file here"></textarea></div>
+<div class="ev-row">
+<label>Read as <select id="ev-format"><option value="auto">Auto</option><option value="hex">Hex</option><option value="base64">Base64</option><option value="escaped">Text with \x escapes</option></select></label>
+<span id="ev-detected" class="ev-small"></span>
+</div>
+<div class="ev-row">
+<label>Paper <select id="ev-paper"><option value="640:576">80 mm (576 dots)</option><option value="640:512">80 mm (512 dots)</option><option value="464:384">58 mm (384 dots)</option><option value="464:360">58 mm (360 dots)</option></select></label>
+<label>Code page at start <select id="ev-codepage"></select></label>
+</div>
+<div class="ev-row ev-small"><label><input type="checkbox" id="ev-area" checked> Show print area edges</label></div>
+<div id="ev-error" class="ev-error" hidden></div>
+<div id="ev-warn-wrap" hidden><strong>Warnings</strong><ul id="ev-warnings"></ul></div>
+</div>
+
+<div class="ev-panel">
+<div class="ev-row">
+<label>Zoom <select id="ev-zoom"><option value="fit">Fit</option><option value="1">1 dot = 1 px</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
+<button type="button" id="ev-png">Download PNG</button>
+<button type="button" id="ev-copy">Copy text</button>
+</div>
+<p id="ev-status" class="ev-small" aria-live="polite"></p>
+<div class="ev-paper-wrap"><canvas id="ev-canvas" width="1" height="1" aria-label="Receipt preview"></canvas></div>
+</div>
+</div>
+
+<details class="ev-log"><summary>Command log (<span id="ev-log-count">0</span> entries)</summary>
+<div class="table-wrap"><table><thead><tr><th>Byte</th><th>Command</th><th>What it does</th><th>Bytes</th></tr></thead><tbody id="ev-log"></tbody></table></div>
+</details>
+
+<h2>How to get the bytes out of your app</h2>
+<p>Print to a file instead of the printer, then drop that file here.</p>
+<ul>
+<li><strong>escpos-php</strong>: use <code>new FilePrintConnector("receipt.bin")</code> instead of the Windows or network connector.</li>
+<li><strong>python-escpos</strong>: print to <code>escpos.printer.Dummy()</code>, then save <code>p.output</code> to a file.</li>
+<li><strong>Node / JavaScript</strong>: whatever library you use ends up with a <code>Buffer</code> or <code>Uint8Array</code>. Write it to disk, or log it as hex and paste it here.</li>
+<li><strong>Windows</strong>: install the "Generic / Text Only" driver on the <code>FILE:</code> port and print to it. The file contains exactly what the app sent.</li>
+</ul>
+
+<h2>Mistakes it points out</h2>
+<ul>
+<li><strong>UTF-8 text sent to the printer.</strong> Receipt printers use one-byte code pages, so "Café" sent as UTF-8 comes out as "Caf├⌐" on CP437. The viewer spots UTF-8 sequences and shows what the paper will say.</li>
+<li><strong>Printer in Kanji (double-byte) mode.</strong> After <code>FS &amp;</code>, every byte from 0x81 up swallows the next byte and prints as a Chinese or Japanese character. I ran into this on my own BIXOLON, where the mode is set in the printer's memory switches.</li>
+<li><strong>Lines wider than the paper</strong>, barcodes or QR codes too wide to print, and images clipped at the edge.</li>
+<li><strong>Text left in the buffer</strong> with no line feed at the end, and <code>ESC @</code> throwing away text that was not printed yet.</li>
+<li><strong>Unknown or cut-off commands</strong>, with the byte offset so you can find them.</li>
+</ul>
+
+<h2>What it understands</h2>
+<p>Text with fonts A and B, bold, underline, white-on-black, double and up to 8× sizes, alignment, line spacing, margins, tabs, 31 code pages (Epson numbering), Kanji mode, raster images (<code>GS v 0</code>, <code>ESC *</code>, <code>GS ( L</code>), QR codes, CODE128, EAN-13, EAN-8, UPC-A, CODE39 and ITF barcodes with their text, cuts and cash drawer pulses. I checked the QR and barcode drawing against an independent Go library, and the text and image output against what <a href="../../">Thermalink</a> sends to a real BIXOLON printer.</p>
+
+<h2>What it cannot show</h2>
+<ul>
+<li>The printer's own font. Letters are drawn with a similar monospace font in the same 12×24 or 9×17 dot cells, so line breaks and widths match, but the letters look a little different on paper.</li>
+<li>Logos stored inside the printer (<code>FS p</code>, NV graphics), user-defined characters, page mode, PDF417, DataMatrix, Codabar and CODE93. They show as placeholders.</li>
+<li>Brand differences. Code page numbers for <code>ESC t</code> follow Epson. Some brands number them differently, so if your printer's self-test page says so, pick the right page under "Code page at start". Star printers in Star Line mode use a different command set.</li>
+</ul>
+
+<h2>Your data stays here</h2>
+<p>The page is plain HTML and JavaScript. Its content security policy sets <code>connect-src 'none'</code>, which stops the browser from sending anything from this page anywhere, so receipts with customer names are safe to paste. The source is in the page; view it to check.</p>
+
+<h2>Want to stop building bytes by hand?</h2>
+<p><a href="../../">Thermalink</a> is my small print agent plus a JavaScript SDK. Your web app sends the receipt as JSON and it prints silently, with QR codes, logos, cut and cash drawer ($49 one-time). If you print with <code>window.print()</code> instead, the <a href="https://7207381545467.gumroad.com/l/receipt-print-kit">Receipt Print Kit</a> ($9) gets the paper size right. Free reference: the <a href="../../cheatsheet/">ESC/POS, ZPL and TSPL cheat sheet</a>, and <a href="../../guides/print-receipt-from-browser-without-dialog/">every way to print from a web app without the dialog</a>.</p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Get Thermalink</a><a class="btn ghost" href="../../docs/quickstart/">Read the quick start</a></div>
+<p class="ev-small">Built by Azeem Ullah. Last updated 20 November 2026.</p>
+<script src="codepages.js"></script>
+<script src="qrtables.js"></script>
+<script src="qr.js"></script>
+<script src="c128table.js"></script>
+<script src="barcodes.js"></script>
+<script src="escpos.js"></script>
+<script src="render.js"></script>
+<script src="examples.js"></script>
+<script src="app.js"></script>
+
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>
