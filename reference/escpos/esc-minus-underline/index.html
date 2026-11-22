@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESC - (1B 2D): underline text on a receipt printer</title>
+<meta name="description" content="ESC - n (hex 1B 2D 00/01/02) sets underline off, 1-dot or 2-dot on ESC/POS thermal printers. Byte examples, library calls and mistakes.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/reference/escpos/esc-minus-underline/">
+<meta property="og:title" content="ESC - (1B 2D): underline text on a receipt printer">
+<meta property="og:description" content="ESC - n (hex 1B 2D 00/01/02) sets underline off, 1-dot or 2-dot on ESC/POS thermal printers. Byte examples, library calls and mistakes.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../../assets/site.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'">
+<link rel="stylesheet" href="../ref.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../../">Thermalink</a>
+<nav><a href="../../../docs/quickstart/">Quick start</a><a href="../../../docs/reference/">Reference</a><a href="../../../docs/troubleshooting/">Troubleshooting</a><a href="../../../docs/compatibility/">Compatibility</a><a href="../../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap">
+
+<p class="ref-crumbs"><a href="../">ESC/POS command reference</a> &rsaquo; ESC -</p>
+<h1>ESC - (1B 2D): underline text on a receipt printer</h1>
+<p class="lead"><code>1B 2D 01</code> gives a thin (1-dot) underline, <code>1B 2D 02</code> a thick (2-dot) one, <code>1B 2D 00</code> turns it off.</p>
+<div class="table-wrap"><table class="ref-syntax"><tbody><tr><td>ASCII</td><td><code>ESC - n</code></td></tr><tr><td>Hex</td><td><code>1B 2D n</code></td></tr><tr><td>Decimal</td><td><code>27 45 n</code></td></tr></tbody></table></div>
+<h2>Parameters</h2>
+<div class="table-wrap"><table class="ref-params"><tbody><tr><td><code>n</code></td><td>0 = off, 1 = 1-dot line, 2 = 2-dot line. The viewer also accepts the ASCII digits 0x30 to 0x32.</td></tr></tbody></table></div>
+<h2>What it does</h2>
+<p>The line is drawn under each character, and it stays on until <code>ESC - 0</code>, <code>ESC @</code>, or an <code>ESC !</code> byte without bit 7.</p><p>python-escpos labels the two values "Underline font 1-dot ON" and "2-dot ON". escpos-php has <code>UNDERLINE_NONE</code>, <code>UNDERLINE_SINGLE</code> and <code>UNDERLINE_DOUBLE</code> for 0, 1 and 2. "Double" there means the thicker line, not two lines.</p>
+<h2>Example</h2>
+<p>n = 1, then n = 2, then off.</p>
+<pre class="ref-code"><code>1B 2D 01 54 68 69 6E 20 75 6E 64 65 72 6C 69 6E 65 0A 1B 2D 02 54 68 69 63 6B 20 75 6E 64 65 72 6C 69 6E 65 0A 1B 2D 00 4E 6F 20 75 6E 64 65 72 6C 69 6E 65 0A</code></pre>
+<div class="ref-ex"><canvas data-hex="1B 2D 01 54 68 69 6E 20 75 6E 64 65 72 6C 69 6E 65 0A 1B 2D 02 54 68 69 63 6B 20 75 6E 64 65 72 6C 69 6E 65 0A 1B 2D 00 4E 6F 20 75 6E 64 65 72 6C 69 6E 65 0A" width="1" height="1" aria-label="Preview of the example on 80 mm paper"></canvas></div>
+<p class="ref-note">Preview drawn in your browser by the <a href="../../../tools/escpos-viewer/">ESC/POS viewer</a>'s engine on 80 mm paper. Letters use a similar monospace font, not the printer's own. <a href="../../../tools/escpos-viewer/#hex=1B2D015468696E20756E6465726C696E650A1B2D02546869636B20756E6465726C696E650A1B2D004E6F20756E6465726C696E650A">Open this example in the viewer</a> to edit the bytes.</p>
+<details><summary>How the viewer decodes these bytes</summary>
+<div class="table-wrap"><table class="ref-log"><thead><tr><th>Command</th><th>What it does</th><th>Bytes</th></tr></thead><tbody><tr><td>ESC -</td><td>Underline 1 dot</td><td class="hex">1B 2D 01</td></tr><tr><td>Text</td><td>&quot;Thin underline&quot;</td><td class="hex">54 68 69 6E 20 75 6E 64 65 72 6C 69 6E 65</td></tr><tr><td>ESC -</td><td>Underline 2 dot</td><td class="hex">1B 2D 02</td></tr><tr><td>Text</td><td>&quot;Thick underline&quot;</td><td class="hex">54 68 69 63 6B 20 75 6E 64 65 72 6C 69 6E 65</td></tr><tr><td>ESC -</td><td>Underline off</td><td class="hex">1B 2D 00</td></tr><tr><td>Text</td><td>&quot;No underline&quot;</td><td class="hex">4E 6F 20 75 6E 64 65 72 6C 69 6E 65</td></tr></tbody></table></div>
+</details>
+<h2>Sending it from code</h2>
+<p><strong>JavaScript (bytes)</strong></p><pre class="ref-code"><code>const underline = (n) =&gt; [0x1b, 0x2d, n]; // 0, 1 or 2</code></pre><p><strong>PHP with escpos-php</strong></p><pre class="ref-code"><code>$printer-&gt;setUnderline(Printer::UNDERLINE_SINGLE); // 1B 2D 01
+$printer-&gt;setUnderline(Printer::UNDERLINE_NONE);   // 1B 2D 00</code></pre><p><strong>Python (raw bytes)</strong></p><pre class="ref-code"><code>data = b&quot;\x1b\x2d\x01&quot; + b&quot;Thin underline\n&quot; + b&quot;\x1b\x2d\x00&quot;</code></pre>
+<h2>Common mistakes</h2>
+<ul><li>Reading "double underline" as two lines. Value 2 is one thicker line.</li><li>Leaving underline on before padding spaces for a two-column row, so the gap between name and price gets underlined as well.</li></ul>
+<h2>Related commands</h2>
+<ul class="ref-list"><li><a href="../esc-e-bold/"><code>ESC E</code></a>: bold text on a receipt printer</li><li><a href="../esc-exclamation-print-mode/"><code>ESC !</code></a>: set font, bold, size and underline in one byte</li><li><a href="../gs-b-reverse/"><code>GS B</code></a>: white on black (reverse) text</li></ul>
+<h2>Sources</h2>
+<ul><li><a href="https://github.com/python-escpos/python-escpos/blob/master/src/escpos/constants.py">python-escpos, <code>constants.py</code> (MIT licence)</a></li><li><a href="https://github.com/mike42/escpos-php/blob/development/src/Mike42/Escpos/Printer.php">escpos-php, <code>Printer.php</code> (MIT licence)</a></li></ul>
+<p class="ref-note">I wrote this page from the open-source libraries above, Thermalink's own output and tests on my BIXOLON printer. It is not copied from Epson's manual. For model-specific details see <a href="https://download4.epson.biz/sec_pubs/pos/reference_en/escpos/commands.html">Epson's official ESC/POS reference</a> or your printer maker's manual. Last checked 22 November 2026.</p>
+<div class="callout"><p><strong>Building receipts byte by byte?</strong> <a href="../../../">Thermalink</a> lets a web app send the receipt as JSON and prints it silently, with QR codes, logos, cut and cash drawer ($49 one-time).</p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Get Thermalink</a><a class="btn ghost" href="../../../tools/escpos-viewer/">Try the ESC/POS viewer</a></div></div>
+<script src="../../../tools/escpos-viewer/codepages.js"></script>
+<script src="../../../tools/escpos-viewer/qrtables.js"></script>
+<script src="../../../tools/escpos-viewer/qr.js"></script>
+<script src="../../../tools/escpos-viewer/c128table.js"></script>
+<script src="../../../tools/escpos-viewer/barcodes.js"></script>
+<script src="../../../tools/escpos-viewer/escpos.js"></script>
+<script src="../../../tools/escpos-viewer/render.js"></script>
+<script src="../ref.js"></script>
+
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>

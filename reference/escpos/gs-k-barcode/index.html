@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GS k (1D 6B): print EAN-13, UPC-A, CODE39 and CODE128 barcodes</title>
+<meta name="description" content="GS k (hex 1D 6B) prints 1D barcodes on ESC/POS printers. Type codes 65 to 73, the two command forms, CODE128 &quot;{B&quot; prefix, and GS h, GS w, GS H for height, width and text.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/reference/escpos/gs-k-barcode/">
+<meta property="og:title" content="GS k (1D 6B): print EAN-13, UPC-A, CODE39 and CODE128 barcodes">
+<meta property="og:description" content="GS k (hex 1D 6B) prints 1D barcodes on ESC/POS printers. Type codes 65 to 73, the two command forms, CODE128 &quot;{B&quot; prefix, and GS h, GS w, GS H for height, width and text.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../../assets/site.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'">
+<link rel="stylesheet" href="../ref.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../../">Thermalink</a>
+<nav><a href="../../../docs/quickstart/">Quick start</a><a href="../../../docs/reference/">Reference</a><a href="../../../docs/troubleshooting/">Troubleshooting</a><a href="../../../docs/compatibility/">Compatibility</a><a href="../../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap">
+
+<p class="ref-crumbs"><a href="../">ESC/POS command reference</a> &rsaquo; GS k</p>
+<h1>GS k (1D 6B): print EAN-13, UPC-A, CODE39 and CODE128 barcodes</h1>
+<p class="lead">The printer draws the barcode itself; you send its type and data. Set height, bar width and the human-readable text first with <code>GS h</code>, <code>GS w</code> and <code>GS H</code>.</p>
+<div class="table-wrap"><table class="ref-syntax"><tbody><tr><td>ASCII</td><td><code>GS k m n d1...dn</code></td></tr><tr><td>Hex</td><td><code>1D 6B m n d1...dn</code></td></tr><tr><td>Decimal</td><td><code>29 107 m n d1...dn</code></td></tr></tbody></table></div>
+<h2>Parameters</h2>
+<div class="table-wrap"><table class="ref-params"><tbody><tr><td><code>m</code></td><td>type. Form with length byte: 65 UPC-A, 66 UPC-E, 67 EAN-13 (JAN13), 68 EAN-8, 69 CODE39, 70 ITF, 71 Codabar, 72 CODE93, 73 CODE128. Older NUL-terminated form: 0 to 6 for the first seven types.</td></tr><tr><td><code>n</code></td><td>number of data bytes (form with m 65 to 73 only).</td></tr><tr><td><code>GS h n</code></td><td><code>1D 68 n</code>: barcode height in dots, 1 to 255.</td></tr><tr><td><code>GS w n</code></td><td><code>1D 77 n</code>: module (narrow bar) width in dots.</td></tr><tr><td><code>GS H n</code></td><td><code>1D 48 n</code>: human-readable text, 0 none, 1 above, 2 below, 3 both.</td></tr></tbody></table></div>
+<h2>What it does</h2>
+<p>There are two forms. With m = 65 to 73 the type is followed by a length byte and the data. With m = 0 to 6 the data ends with a 00 byte instead. escpos-php uses the length form when the printer profile supports it and falls back to the old form otherwise.</p><p>Data rules come from the barcode standards. escpos-php checks them before sending: UPC-A 11 or 12 digits, EAN-13 12 or 13, EAN-8 7 or 8, ITF an even number of digits, CODE39 digits, capitals and <code>space $ % + - . /</code>.</p><p>CODE128 data must start with a code set selector: <code>{A</code>, <code>{B</code> or <code>{C</code> (escpos-php refuses CODE128 data without one). <code>{B</code> covers ordinary text.</p><p>escpos-php notes that widths "above 6 appear to have no effect". A barcode wider than the paper does not print, and the viewer warns when that happens.</p>
+<h2>Example</h2>
+<p>EAN-13 and CODE128 (code set B), 80 dots high, text below.</p>
+<pre class="ref-code"><code>1D 68 50 1D 77 02 1D 48 02 1B 61 01 1D 6B 43 0D 34 30 30 36 33 38 31 33 33 33 39 33 31 0A 1D 6B 49 09 7B 42 54 4C 2D 31 30 34 32 0A 1B 61 00</code></pre>
+<div class="ref-ex"><canvas data-hex="1D 68 50 1D 77 02 1D 48 02 1B 61 01 1D 6B 43 0D 34 30 30 36 33 38 31 33 33 33 39 33 31 0A 1D 6B 49 09 7B 42 54 4C 2D 31 30 34 32 0A 1B 61 00" width="1" height="1" aria-label="Preview of the example on 80 mm paper"></canvas></div>
+<p class="ref-note">Preview drawn in your browser by the <a href="../../../tools/escpos-viewer/">ESC/POS viewer</a>'s engine on 80 mm paper. Letters use a similar monospace font, not the printer's own. <a href="../../../tools/escpos-viewer/#hex=1D68501D77021D48021B61011D6B430D343030363338313333333933310A1D6B49097B42544C2D313034320A1B6100">Open this example in the viewer</a> to edit the bytes.</p>
+<details><summary>How the viewer decodes these bytes</summary>
+<div class="table-wrap"><table class="ref-log"><thead><tr><th>Command</th><th>What it does</th><th>Bytes</th></tr></thead><tbody><tr><td>GS h</td><td>Barcode height 80 dots</td><td class="hex">1D 68 50</td></tr><tr><td>GS w</td><td>Barcode module width 2</td><td class="hex">1D 77 02</td></tr><tr><td>GS H</td><td>Barcode text: below</td><td class="hex">1D 48 02</td></tr><tr><td>ESC a</td><td>Align center</td><td class="hex">1B 61 01</td></tr><tr><td>GS k</td><td>Barcode EAN-13 &quot;4006381333931&quot;, 190 dots wide, 80 high</td><td class="hex">1D 6B 43 0D 34 30 30 36 33 38 31 33 33 33 39 33 31</td></tr><tr><td>GS k</td><td>Barcode CODE128 &quot;TL-1042&quot;, 224 dots wide, 80 high</td><td class="hex">1D 6B 49 09 7B 42 54 4C 2D 31 30 34 32</td></tr><tr><td>ESC a</td><td>Align left</td><td class="hex">1B 61 00</td></tr></tbody></table></div>
+</details>
+<h2>Sending it from code</h2>
+<p><strong>JavaScript (bytes)</strong></p><pre class="ref-code"><code>const data = [...&quot;{BTL-1042&quot;].map(c =&gt; c.charCodeAt(0));
+const code128 = [0x1d, 0x68, 80, 0x1d, 0x48, 2, 0x1d, 0x6b, 73, data.length, ...data];</code></pre><p><strong>PHP with escpos-php</strong></p><pre class="ref-code"><code>$printer-&gt;setBarcodeHeight(80);
+$printer-&gt;setBarcodeTextPosition(Printer::BARCODE_TEXT_BELOW);
+$printer-&gt;barcode(&quot;{BTL-1042&quot;, Printer::BARCODE_CODE128);</code></pre><p><strong>Python (raw bytes)</strong></p><pre class="ref-code"><code>d = b&quot;4006381333931&quot;
+data += b&quot;\x1d\x68\x50\x1d\x48\x02\x1d\x6b\x43&quot; + bytes([len(d)]) + d</code></pre>
+<h2>Common mistakes</h2>
+<ul><li>CODE128 without <code>{B</code>: the first two characters are taken as the code set, or the printer prints nothing.</li><li>Wrong length byte <code>n</code>: the printer takes too few bytes, or swallows the commands that follow.</li><li>A height of 8 dots (escpos-php's default when you call <code>setBarcodeHeight()</code> with no value) is about 1 mm, too short for most scanners. Use 50 to 100.</li></ul>
+<h2>Related commands</h2>
+<ul class="ref-list"><li><a href="../gs-paren-k-qr-code/"><code>GS ( k</code></a>: print a QR code on a receipt printer</li><li><a href="../esc-a-justification/"><code>ESC a</code></a>: center or right-align text on a receipt printer</li><li><a href="../gs-v-0-raster-image/"><code>GS v 0</code></a>: print a logo or image on a receipt printer</li></ul>
+<h2>Sources</h2>
+<ul><li><a href="https://github.com/mike42/escpos-php/blob/development/src/Mike42/Escpos/Printer.php">escpos-php, <code>Printer.php</code> (MIT licence)</a></li><li><a href="https://github.com/python-escpos/python-escpos/blob/master/src/escpos/constants.py">python-escpos, <code>constants.py</code> (MIT licence)</a></li><li><a href="../../../">Thermalink agent output, printed on a BIXOLON SRP-352plusIII (Windows 11, USB)</a></li></ul>
+<p class="ref-note">I wrote this page from the open-source libraries above, Thermalink's own output and tests on my BIXOLON printer. It is not copied from Epson's manual. For model-specific details see <a href="https://download4.epson.biz/sec_pubs/pos/reference_en/escpos/commands.html">Epson's official ESC/POS reference</a> or your printer maker's manual. Last checked 22 November 2026.</p>
+<div class="callout"><p><strong>Building receipts byte by byte?</strong> <a href="../../../">Thermalink</a> lets a web app send the receipt as JSON and prints it silently, with QR codes, logos, cut and cash drawer ($49 one-time).</p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Get Thermalink</a><a class="btn ghost" href="../../../tools/escpos-viewer/">Try the ESC/POS viewer</a></div></div>
+<script src="../../../tools/escpos-viewer/codepages.js"></script>
+<script src="../../../tools/escpos-viewer/qrtables.js"></script>
+<script src="../../../tools/escpos-viewer/qr.js"></script>
+<script src="../../../tools/escpos-viewer/c128table.js"></script>
+<script src="../../../tools/escpos-viewer/barcodes.js"></script>
+<script src="../../../tools/escpos-viewer/escpos.js"></script>
+<script src="../../../tools/escpos-viewer/render.js"></script>
+<script src="../ref.js"></script>
+
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>

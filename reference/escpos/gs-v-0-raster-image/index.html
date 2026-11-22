@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GS v 0 (1D 76 30): print a logo or image on a receipt printer</title>
+<meta name="description" content="GS v 0 (hex 1D 76 30) prints a 1-bit raster image on ESC/POS printers. Header bytes, how to pack pixels, width in bytes, and why images get cut off.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/reference/escpos/gs-v-0-raster-image/">
+<meta property="og:title" content="GS v 0 (1D 76 30): print a logo or image on a receipt printer">
+<meta property="og:description" content="GS v 0 (hex 1D 76 30) prints a 1-bit raster image on ESC/POS printers. Header bytes, how to pack pixels, width in bytes, and why images get cut off.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../../assets/site.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'">
+<link rel="stylesheet" href="../ref.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../../">Thermalink</a>
+<nav><a href="../../../docs/quickstart/">Quick start</a><a href="../../../docs/reference/">Reference</a><a href="../../../docs/troubleshooting/">Troubleshooting</a><a href="../../../docs/compatibility/">Compatibility</a><a href="../../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap">
+
+<p class="ref-crumbs"><a href="../">ESC/POS command reference</a> &rsaquo; GS v 0</p>
+<h1>GS v 0 (1D 76 30): print a logo or image on a receipt printer</h1>
+<p class="lead">The most widely used way to print a logo. You send a small header, then the image as rows of bits: 1 is a black dot, 0 is white.</p>
+<div class="table-wrap"><table class="ref-syntax"><tbody><tr><td>ASCII</td><td><code>GS v 0 m xL xH yL yH d1...dk</code></td></tr><tr><td>Hex</td><td><code>1D 76 30 m xL xH yL yH d1...dk</code></td></tr><tr><td>Decimal</td><td><code>29 118 48 m xL xH yL yH d1...dk</code></td></tr></tbody></table></div>
+<h2>Parameters</h2>
+<div class="table-wrap"><table class="ref-params"><tbody><tr><td><code>m</code></td><td>0 = normal, 1 = double width, 2 = double height, 3 = both (0x30 to 0x33 also accepted by the viewer).</td></tr><tr><td><code>xL xH</code></td><td>width in bytes, not dots: xL + xH &times; 256 = width in dots / 8, rounded up.</td></tr><tr><td><code>yL yH</code></td><td>height in dots: yL + yH &times; 256.</td></tr><tr><td><code>d1...dk</code></td><td>k = width in bytes &times; height. Rows top to bottom; in each byte the most significant bit is the leftmost dot.</td></tr></tbody></table></div>
+<h2>What it does</h2>
+<p>Convert the image to black and white first (threshold or dithering), pad each row to a multiple of 8 dots, then pack 8 dots per byte. Thermalink does this in its agent and sends one <code>GS v 0</code> per image, and its output is tested pixel for pixel against the viewer.</p><p>The printable width is fixed: commonly 576 dots on 80 mm paper and 384 on 58 mm. A wider image is clipped on the right, not scaled; the viewer warns when an image is too wide.</p><p>escpos-php uses <code>GS v 0</code> for <code>bitImage()</code> (and notes it pads the right side when the width is not a multiple of 8). Its <code>graphics()</code> method uses the newer <code>GS ( L</code> command, which not every printer supports.</p>
+<h2>Example</h2>
+<p>A 64 &times; 32 dot test image: 8 bytes per row, 32 rows, 256 data bytes.</p>
+<pre class="ref-code"><code>1B 61 01 1D 76 30 00 08 00 20 00 FF FF FF FF FF FF FF FF F0 00 00 00 00 00 00 01 9C 00 00 00 00 00 00 01 87 00 00 00 00 00 00 01 81 C0 00 00 00 00 00 01 80 70 00 00 00 00 00 01 80 1C 00 00 00 00 00 01 80 07 00 00 00 00 00 01 80 01 C0 00 00 FF FF 01 80 00 70 00 00 FF FF 01 80 00 1C 00 00 FF FF 01 80 00 07 00 00 FF FF 01 80 00 01 C0 00 FF FF 01 80 00 00 70 00 FF FF 01 80 00 00 1C 00 FF FF 01 80 00 00 07 00 FF FF 01 80 00 00 01 C0 FF FF 01 80 00 00 00 70 FF FF 01 80 00 00 00 1C FF FF 01 80 00 00 00 07 FF FF 01 80 00 00 00 01 FF FF 01 80 00 00 00 00 FF FF 01 80 00 00 00 00 FF FF 01 80 00 00 00 00 FF FF 01 80 00 00 00 00 01 C0 01 80 00 00 00 00 00 70 01 80 00 00 00 00 00 1C 01 80 00 00 00 00 00 07 01 80 00 00 00 00 00 01 C1 80 00 00 00 00 00 00 71 80 00 00 00 00 00 00 1D FF FF FF FF FF FF FF FF 0A 36 34 20 78 20 33 32 20 64 6F 74 20 69 6D 61 67 65 0A 1B 61 00</code></pre>
+<div class="ref-ex"><canvas data-hex="1B 61 01 1D 76 30 00 08 00 20 00 FF FF FF FF FF FF FF FF F0 00 00 00 00 00 00 01 9C 00 00 00 00 00 00 01 87 00 00 00 00 00 00 01 81 C0 00 00 00 00 00 01 80 70 00 00 00 00 00 01 80 1C 00 00 00 00 00 01 80 07 00 00 00 00 00 01 80 01 C0 00 00 FF FF 01 80 00 70 00 00 FF FF 01 80 00 1C 00 00 FF FF 01 80 00 07 00 00 FF FF 01 80 00 01 C0 00 FF FF 01 80 00 00 70 00 FF FF 01 80 00 00 1C 00 FF FF 01 80 00 00 07 00 FF FF 01 80 00 00 01 C0 FF FF 01 80 00 00 00 70 FF FF 01 80 00 00 00 1C FF FF 01 80 00 00 00 07 FF FF 01 80 00 00 00 01 FF FF 01 80 00 00 00 00 FF FF 01 80 00 00 00 00 FF FF 01 80 00 00 00 00 FF FF 01 80 00 00 00 00 01 C0 01 80 00 00 00 00 00 70 01 80 00 00 00 00 00 1C 01 80 00 00 00 00 00 07 01 80 00 00 00 00 00 01 C1 80 00 00 00 00 00 00 71 80 00 00 00 00 00 00 1D FF FF FF FF FF FF FF FF 0A 36 34 20 78 20 33 32 20 64 6F 74 20 69 6D 61 67 65 0A 1B 61 00" width="1" height="1" aria-label="Preview of the example on 80 mm paper"></canvas></div>
+<p class="ref-note">Preview drawn in your browser by the <a href="../../../tools/escpos-viewer/">ESC/POS viewer</a>'s engine on 80 mm paper. Letters use a similar monospace font, not the printer's own. <a href="../../../tools/escpos-viewer/#hex=1B61011D76300008002000FFFFFFFFFFFFFFFFF0000000000000019C00000000000001870000000000000181C00000000000018070000000000001801C00000000000180070000000000018001C00000FFFF018000700000FFFF0180001C0000FFFF018000070000FFFF01800001C000FFFF018000007000FFFF018000001C00FFFF018000000700FFFF0180000001C0FFFF018000000070FFFF01800000001CFFFF018000000007FFFF018000000001FFFF018000000000FFFF018000000000FFFF018000000000FFFF01800000000001C00180000000000070018000000000001C01800000000000070180000000000001C18000000000000071800000000000001DFFFFFFFFFFFFFFFF0A3634207820333220646F7420696D6167650A1B6100">Open this example in the viewer</a> to edit the bytes.</p>
+<details><summary>How the viewer decodes these bytes</summary>
+<div class="table-wrap"><table class="ref-log"><thead><tr><th>Command</th><th>What it does</th><th>Bytes</th></tr></thead><tbody><tr><td>ESC a</td><td>Align center</td><td class="hex">1B 61 01</td></tr><tr><td>GS v 0</td><td>Raster image 64×32 dots</td><td class="hex">1D 76 30 00 08 00 20 00 FF FF FF FF FF FF FF FF F0 00 00 00 00 00 00 01 …</td></tr><tr><td>Text</td><td>&quot;64 x 32 dot image&quot;</td><td class="hex">36 34 20 78 20 33 32 20 64 6F 74 20 69 6D 61 67 65</td></tr><tr><td>ESC a</td><td>Align left</td><td class="hex">1B 61 00</td></tr></tbody></table></div>
+</details>
+<h2>Sending it from code</h2>
+<p><strong>JavaScript (bytes)</strong></p><pre class="ref-code"><code>// rows: array of Uint8Array, one bit per dot, MSB = leftmost
+function raster(rows, widthDots) {
+  const xb = Math.ceil(widthDots / 8), h = rows.length;
+  return [0x1d, 0x76, 0x30, 0, xb &amp; 255, xb &gt;&gt; 8, h &amp; 255, h &gt;&gt; 8, ...rows.flatMap(r =&gt; [...r])];
+}</code></pre><p><strong>PHP with escpos-php</strong></p><pre class="ref-code"><code>$logo = EscposImage::load(&quot;logo.png&quot;);
+$printer-&gt;bitImage($logo); // GS v 0</code></pre><p><strong>Python (raw bytes)</strong></p><pre class="ref-code"><code>def raster(rows, width_dots):
+    xb = (width_dots + 7) // 8
+    head = bytes([0x1d, 0x76, 0x30, 0, xb % 256, xb // 256, len(rows) % 256, len(rows) // 256])
+    return head + b&quot;&quot;.join(rows)</code></pre>
+<h2>Common mistakes</h2>
+<ul><li>Putting the width in dots into xL xH. It is bytes: a 576-dot-wide image is <code>48 00</code>.</li><li>Sending a colour or greyscale image byte per pixel. Each byte is 8 dots.</li><li>One huge image on a printer with a small buffer. Split tall images into bands of a few hundred rows, each with its own header.</li></ul>
+<h2>Related commands</h2>
+<ul class="ref-list"><li><a href="../esc-a-justification/"><code>ESC a</code></a>: center or right-align text on a receipt printer</li><li><a href="../gs-paren-k-qr-code/"><code>GS ( k</code></a>: print a QR code on a receipt printer</li><li><a href="../gs-k-barcode/"><code>GS k</code></a>: print EAN-13, UPC-A, CODE39 and CODE128 barcodes</li></ul>
+<h2>Sources</h2>
+<ul><li><a href="https://github.com/mike42/escpos-php/blob/development/src/Mike42/Escpos/Printer.php">escpos-php, <code>Printer.php</code> (MIT licence)</a></li><li><a href="../../../">Thermalink agent output, printed on a BIXOLON SRP-352plusIII (Windows 11, USB)</a></li></ul>
+<p class="ref-note">I wrote this page from the open-source libraries above, Thermalink's own output and tests on my BIXOLON printer. It is not copied from Epson's manual. For model-specific details see <a href="https://download4.epson.biz/sec_pubs/pos/reference_en/escpos/commands.html">Epson's official ESC/POS reference</a> or your printer maker's manual. Last checked 22 November 2026.</p>
+<div class="callout"><p><strong>Building receipts byte by byte?</strong> <a href="../../../">Thermalink</a> lets a web app send the receipt as JSON and prints it silently, with QR codes, logos, cut and cash drawer ($49 one-time).</p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Get Thermalink</a><a class="btn ghost" href="../../../tools/escpos-viewer/">Try the ESC/POS viewer</a></div></div>
+<script src="../../../tools/escpos-viewer/codepages.js"></script>
+<script src="../../../tools/escpos-viewer/qrtables.js"></script>
+<script src="../../../tools/escpos-viewer/qr.js"></script>
+<script src="../../../tools/escpos-viewer/c128table.js"></script>
+<script src="../../../tools/escpos-viewer/barcodes.js"></script>
+<script src="../../../tools/escpos-viewer/escpos.js"></script>
+<script src="../../../tools/escpos-viewer/render.js"></script>
+<script src="../ref.js"></script>
+
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>

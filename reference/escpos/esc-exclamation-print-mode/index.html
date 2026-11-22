@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESC ! (1B 21): set font, bold, size and underline in one byte</title>
+<meta name="description" content="ESC ! n (hex 1B 21 n) sets font B, bold, double height, double width and underline at once on ESC/POS printers. Bit table and why it overrides other style commands.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/reference/escpos/esc-exclamation-print-mode/">
+<meta property="og:title" content="ESC ! (1B 21): set font, bold, size and underline in one byte">
+<meta property="og:description" content="ESC ! n (hex 1B 21 n) sets font B, bold, double height, double width and underline at once on ESC/POS printers. Bit table and why it overrides other style commands.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../../assets/site.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'">
+<link rel="stylesheet" href="../ref.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../../">Thermalink</a>
+<nav><a href="../../../docs/quickstart/">Quick start</a><a href="../../../docs/reference/">Reference</a><a href="../../../docs/troubleshooting/">Troubleshooting</a><a href="../../../docs/compatibility/">Compatibility</a><a href="../../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap">
+
+<p class="ref-crumbs"><a href="../">ESC/POS command reference</a> &rsaquo; ESC !</p>
+<h1>ESC ! (1B 21): set font, bold, size and underline in one byte</h1>
+<p class="lead">An older command that sets five styles at once from the bits of <code>n</code>. Handy, but it overwrites whatever you set before with the single-purpose commands.</p>
+<div class="table-wrap"><table class="ref-syntax"><tbody><tr><td>ASCII</td><td><code>ESC ! n</code></td></tr><tr><td>Hex</td><td><code>1B 21 n</code></td></tr><tr><td>Decimal</td><td><code>27 33 n</code></td></tr></tbody></table></div>
+<h2>Parameters</h2>
+<div class="table-wrap"><table class="ref-params"><tbody><tr><td><code>n</code></td><td>bit 0 (0x01) font B, bit 3 (0x08) bold, bit 4 (0x10) double height, bit 5 (0x20) double width, bit 7 (0x80) underline. Add the values you want.</td></tr></tbody></table></div>
+<h2>What it does</h2>
+<p>escpos-php's <code>selectPrintMode()</code> takes OR-ed <code>MODE_*</code> constants with exactly these values (FONT_B 1, EMPHASIZED 8, DOUBLE_HEIGHT 16, DOUBLE_WIDTH 32, UNDERLINE 128) and notes that mode 0 "has a similar effect to running initialize()" for text style.</p><p>python-escpos uses <code>ESC ! 0x10</code>, <code>0x20</code> and <code>0x30</code> for its "2h", "2w" and "2x" sizes.</p><p>Because every bit is written each time, <code>ESC !</code> turns off anything whose bit is 0: bold from <code>ESC E</code>, underline from <code>ESC -</code>, and a size from <code>GS !</code>. It only goes up to double size; use <code>GS !</code> for 3x to 8x.</p>
+<h2>Example</h2>
+<p>Four values of n.</p>
+<pre class="ref-code"><code>1B 21 08 62 6F 6C 64 20 28 30 78 30 38 29 0A 1B 21 30 32 78 20 28 30 78 33 30 29 0A 1B 21 81 66 6F 6E 74 20 42 20 2B 20 75 6E 64 65 72 6C 69 6E 65 20 28 30 78 38 31 29 0A 1B 21 00 61 6C 6C 20 6F 66 66 20 28 30 78 30 30 29 0A</code></pre>
+<div class="ref-ex"><canvas data-hex="1B 21 08 62 6F 6C 64 20 28 30 78 30 38 29 0A 1B 21 30 32 78 20 28 30 78 33 30 29 0A 1B 21 81 66 6F 6E 74 20 42 20 2B 20 75 6E 64 65 72 6C 69 6E 65 20 28 30 78 38 31 29 0A 1B 21 00 61 6C 6C 20 6F 66 66 20 28 30 78 30 30 29 0A" width="1" height="1" aria-label="Preview of the example on 80 mm paper"></canvas></div>
+<p class="ref-note">Preview drawn in your browser by the <a href="../../../tools/escpos-viewer/">ESC/POS viewer</a>'s engine on 80 mm paper. Letters use a similar monospace font, not the printer's own. <a href="../../../tools/escpos-viewer/#hex=1B2108626F6C64202830783038290A1B21303278202830783330290A1B2181666F6E742042202B20756E6465726C696E65202830783831290A1B2100616C6C206F6666202830783030290A">Open this example in the viewer</a> to edit the bytes.</p>
+<details><summary>How the viewer decodes these bytes</summary>
+<div class="table-wrap"><table class="ref-log"><thead><tr><th>Command</th><th>What it does</th><th>Bytes</th></tr></thead><tbody><tr><td>ESC !</td><td>Print mode: font A, bold</td><td class="hex">1B 21 08</td></tr><tr><td>Text</td><td>&quot;bold (0x08)&quot;</td><td class="hex">62 6F 6C 64 20 28 30 78 30 38 29</td></tr><tr><td>ESC !</td><td>Print mode: font A, double height, double width</td><td class="hex">1B 21 30</td></tr><tr><td>Text</td><td>&quot;2x (0x30)&quot;</td><td class="hex">32 78 20 28 30 78 33 30 29</td></tr><tr><td>ESC !</td><td>Print mode: font B, underline</td><td class="hex">1B 21 81</td></tr><tr><td>Text</td><td>&quot;font B + underline (0x81)&quot;</td><td class="hex">66 6F 6E 74 20 42 20 2B 20 75 6E 64 65 72 6C 69 6E 65 20 28 30 78 38 31 …</td></tr><tr><td>ESC !</td><td>Print mode: font A</td><td class="hex">1B 21 00</td></tr><tr><td>Text</td><td>&quot;all off (0x00)&quot;</td><td class="hex">61 6C 6C 20 6F 66 66 20 28 30 78 30 30 29</td></tr></tbody></table></div>
+</details>
+<h2>Sending it from code</h2>
+<p><strong>JavaScript (bytes)</strong></p><pre class="ref-code"><code>const mode = (n) =&gt; [0x1b, 0x21, n];
+mode(0x08 | 0x30); // bold, double width and height</code></pre><p><strong>PHP with escpos-php</strong></p><pre class="ref-code"><code>$printer-&gt;selectPrintMode(Printer::MODE_EMPHASIZED | Printer::MODE_DOUBLE_WIDTH); // 1B 21 28
+$printer-&gt;selectPrintMode(); // 1B 21 00</code></pre><p><strong>Python (raw bytes)</strong></p><pre class="ref-code"><code>data = b&quot;\x1b\x21\x38&quot; + b&quot;BIG BOLD\n&quot; + b&quot;\x1b\x21\x00&quot;</code></pre>
+<h2>Common mistakes</h2>
+<ul><li>Setting bold with <code>ESC E 1</code>, then size with <code>ESC ! 0x30</code>: bold is now off, because bit 3 was 0.</li><li>Expecting 3x text from <code>ESC !</code>. Its size bits only double.</li></ul>
+<h2>Related commands</h2>
+<ul class="ref-list"><li><a href="../gs-exclamation-character-size/"><code>GS !</code></a>: double width and height text, up to 8x</li><li><a href="../esc-e-bold/"><code>ESC E</code></a>: bold text on a receipt printer</li><li><a href="../esc-minus-underline/"><code>ESC -</code></a>: underline text on a receipt printer</li></ul>
+<h2>Sources</h2>
+<ul><li><a href="https://github.com/mike42/escpos-php/blob/development/src/Mike42/Escpos/Printer.php">escpos-php, <code>Printer.php</code> (MIT licence)</a></li><li><a href="https://github.com/python-escpos/python-escpos/blob/master/src/escpos/constants.py">python-escpos, <code>constants.py</code> (MIT licence)</a></li></ul>
+<p class="ref-note">I wrote this page from the open-source libraries above, Thermalink's own output and tests on my BIXOLON printer. It is not copied from Epson's manual. For model-specific details see <a href="https://download4.epson.biz/sec_pubs/pos/reference_en/escpos/commands.html">Epson's official ESC/POS reference</a> or your printer maker's manual. Last checked 22 November 2026.</p>
+<div class="callout"><p><strong>Building receipts byte by byte?</strong> <a href="../../../">Thermalink</a> lets a web app send the receipt as JSON and prints it silently, with QR codes, logos, cut and cash drawer ($49 one-time).</p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Get Thermalink</a><a class="btn ghost" href="../../../tools/escpos-viewer/">Try the ESC/POS viewer</a></div></div>
+<script src="../../../tools/escpos-viewer/codepages.js"></script>
+<script src="../../../tools/escpos-viewer/qrtables.js"></script>
+<script src="../../../tools/escpos-viewer/qr.js"></script>
+<script src="../../../tools/escpos-viewer/c128table.js"></script>
+<script src="../../../tools/escpos-viewer/barcodes.js"></script>
+<script src="../../../tools/escpos-viewer/escpos.js"></script>
+<script src="../../../tools/escpos-viewer/render.js"></script>
+<script src="../ref.js"></script>
+
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>

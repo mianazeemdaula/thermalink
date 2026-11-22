@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GS B (1D 42): white on black (reverse) text</title>
+<meta name="description" content="GS B n (hex 1D 42 01 / 1D 42 00) prints white text on a black background on ESC/POS printers. Bytes, library calls and paper-use notes.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/reference/escpos/gs-b-reverse/">
+<meta property="og:title" content="GS B (1D 42): white on black (reverse) text">
+<meta property="og:description" content="GS B n (hex 1D 42 01 / 1D 42 00) prints white text on a black background on ESC/POS printers. Bytes, library calls and paper-use notes.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../../assets/site.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'">
+<link rel="stylesheet" href="../ref.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../../">Thermalink</a>
+<nav><a href="../../../docs/quickstart/">Quick start</a><a href="../../../docs/reference/">Reference</a><a href="../../../docs/troubleshooting/">Troubleshooting</a><a href="../../../docs/compatibility/">Compatibility</a><a href="../../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap">
+
+<p class="ref-crumbs"><a href="../">ESC/POS command reference</a> &rsaquo; GS B</p>
+<h1>GS B (1D 42): white on black (reverse) text</h1>
+<p class="lead"><code>1D 42 01</code> prints white characters on black; <code>1D 42 00</code> turns it off. Good for a "PAID" or order-number banner.</p>
+<div class="table-wrap"><table class="ref-syntax"><tbody><tr><td>ASCII</td><td><code>GS B n</code></td></tr><tr><td>Hex</td><td><code>1D 42 n</code></td></tr><tr><td>Decimal</td><td><code>29 66 n</code></td></tr></tbody></table></div>
+<h2>Parameters</h2>
+<div class="table-wrap"><table class="ref-params"><tbody><tr><td><code>n</code></td><td>1 = reverse on, 0 = off. The viewer reads only the lowest bit.</td></tr></tbody></table></div>
+<h2>What it does</h2>
+<p>Each character cell is printed black and the character is left white. Combined with <code>GS !</code> it makes a large, readable banner.</p><p>escpos-php calls it <code>setReverseColors()</code>; python-escpos uses the same bytes for <code>invert=True</code>. Thermalink uses it for inverted rows on the BIXOLON.</p>
+<h2>Example</h2>
+<p>A centered double-size reverse banner.</p>
+<pre class="ref-code"><code>1B 61 01 1D 21 11 1D 42 01 20 50 41 49 44 20 0A 1D 42 00 1D 21 00 4F 72 64 65 72 20 31 30 34 32 0A 1B 61 00</code></pre>
+<div class="ref-ex"><canvas data-hex="1B 61 01 1D 21 11 1D 42 01 20 50 41 49 44 20 0A 1D 42 00 1D 21 00 4F 72 64 65 72 20 31 30 34 32 0A 1B 61 00" width="1" height="1" aria-label="Preview of the example on 80 mm paper"></canvas></div>
+<p class="ref-note">Preview drawn in your browser by the <a href="../../../tools/escpos-viewer/">ESC/POS viewer</a>'s engine on 80 mm paper. Letters use a similar monospace font, not the printer's own. <a href="../../../tools/escpos-viewer/#hex=1B61011D21111D42012050414944200A1D42001D21004F7264657220313034320A1B6100">Open this example in the viewer</a> to edit the bytes.</p>
+<details><summary>How the viewer decodes these bytes</summary>
+<div class="table-wrap"><table class="ref-log"><thead><tr><th>Command</th><th>What it does</th><th>Bytes</th></tr></thead><tbody><tr><td>ESC a</td><td>Align center</td><td class="hex">1B 61 01</td></tr><tr><td>GS !</td><td>Character size 2× wide, 2× high</td><td class="hex">1D 21 11</td></tr><tr><td>GS B</td><td>White on black on</td><td class="hex">1D 42 01</td></tr><tr><td>Text</td><td>&quot; PAID &quot;</td><td class="hex">20 50 41 49 44 20</td></tr><tr><td>GS B</td><td>White on black off</td><td class="hex">1D 42 00</td></tr><tr><td>GS !</td><td>Character size 1× wide, 1× high</td><td class="hex">1D 21 00</td></tr><tr><td>Text</td><td>&quot;Order 1042&quot;</td><td class="hex">4F 72 64 65 72 20 31 30 34 32</td></tr><tr><td>ESC a</td><td>Align left</td><td class="hex">1B 61 00</td></tr></tbody></table></div>
+</details>
+<h2>Sending it from code</h2>
+<p><strong>JavaScript (bytes)</strong></p><pre class="ref-code"><code>const reverseOn = [0x1d, 0x42, 1], reverseOff = [0x1d, 0x42, 0];</code></pre><p><strong>PHP with escpos-php</strong></p><pre class="ref-code"><code>$printer-&gt;setReverseColors(true);  // 1D 42 01
+$printer-&gt;setReverseColors(false); // 1D 42 00</code></pre><p><strong>Python (raw bytes)</strong></p><pre class="ref-code"><code>data += b&quot;\x1d\x42\x01&quot; + b&quot; PAID \n&quot; + b&quot;\x1d\x42\x00&quot;</code></pre>
+<h2>Common mistakes</h2>
+<ul><li>No spaces around the word, so the black block ends right at the first and last letter. Add a space each side.</li><li>Leaving it on: every following line prints as a black bar.</li></ul>
+<h2>Related commands</h2>
+<ul class="ref-list"><li><a href="../gs-exclamation-character-size/"><code>GS !</code></a>: double width and height text, up to 8x</li><li><a href="../esc-e-bold/"><code>ESC E</code></a>: bold text on a receipt printer</li><li><a href="../esc-a-justification/"><code>ESC a</code></a>: center or right-align text on a receipt printer</li></ul>
+<h2>Sources</h2>
+<ul><li><a href="https://github.com/mike42/escpos-php/blob/development/src/Mike42/Escpos/Printer.php">escpos-php, <code>Printer.php</code> (MIT licence)</a></li><li><a href="https://github.com/python-escpos/python-escpos/blob/master/src/escpos/constants.py">python-escpos, <code>constants.py</code> (MIT licence)</a></li><li><a href="../../../">Thermalink agent output, printed on a BIXOLON SRP-352plusIII (Windows 11, USB)</a></li></ul>
+<p class="ref-note">I wrote this page from the open-source libraries above, Thermalink's own output and tests on my BIXOLON printer. It is not copied from Epson's manual. For model-specific details see <a href="https://download4.epson.biz/sec_pubs/pos/reference_en/escpos/commands.html">Epson's official ESC/POS reference</a> or your printer maker's manual. Last checked 22 November 2026.</p>
+<div class="callout"><p><strong>Building receipts byte by byte?</strong> <a href="../../../">Thermalink</a> lets a web app send the receipt as JSON and prints it silently, with QR codes, logos, cut and cash drawer ($49 one-time).</p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Get Thermalink</a><a class="btn ghost" href="../../../tools/escpos-viewer/">Try the ESC/POS viewer</a></div></div>
+<script src="../../../tools/escpos-viewer/codepages.js"></script>
+<script src="../../../tools/escpos-viewer/qrtables.js"></script>
+<script src="../../../tools/escpos-viewer/qr.js"></script>
+<script src="../../../tools/escpos-viewer/c128table.js"></script>
+<script src="../../../tools/escpos-viewer/barcodes.js"></script>
+<script src="../../../tools/escpos-viewer/escpos.js"></script>
+<script src="../../../tools/escpos-viewer/render.js"></script>
+<script src="../ref.js"></script>
+
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>

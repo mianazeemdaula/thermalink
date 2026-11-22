@@ -32,7 +32,7 @@
 <p>These are nominal. My "576 dot" printer measured 568 usable dots, so print a ruler before trusting the spec sheet.</p>
 
 <h2 id="escpos">ESC/POS (receipt printers)</h2>
-<p>ESC is byte 1B, GS is 1D, DLE is 10. <code>n</code> is one byte you choose. Bytes are in hex.</p>
+<p>ESC is byte 1B, GS is 1D, DLE is 10. <code>n</code> is one byte you choose. Bytes are in hex. The common commands each have a page with examples and live previews in the <a href="../reference/escpos/">ESC/POS command reference</a>.</p>
 <h3>Basics</h3><div class="table-wrap"><table class="cmds"><thead><tr><th>Command</th><th>Bytes (hex)</th><th>What it does</th><th></th></tr></thead><tbody>
 <tr><td><code>ESC @</code></td><td class="hex">1B 40</td><td>Initialise the printer. Clears formatting set by earlier jobs. Send it first.</td><td><span class="tag ok">used</span></td></tr>
 <tr><td><code>LF</code></td><td class="hex">0A</td><td>Print the line buffer and feed one line.</td><td><span class="tag ok">used</span></td></tr>

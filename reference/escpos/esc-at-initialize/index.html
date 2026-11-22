@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESC @ (1B 40): initialize the printer</title>
+<meta name="description" content="ESC @ (hex 1B 40) resets a receipt printer&#x27;s text styles, alignment and code page. What it resets, what it does not, and why it can throw away your text.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/reference/escpos/esc-at-initialize/">
+<meta property="og:title" content="ESC @ (1B 40): initialize the printer">
+<meta property="og:description" content="ESC @ (hex 1B 40) resets a receipt printer&#x27;s text styles, alignment and code page. What it resets, what it does not, and why it can throw away your text.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../../assets/site.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'">
+<link rel="stylesheet" href="../ref.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../../">Thermalink</a>
+<nav><a href="../../../docs/quickstart/">Quick start</a><a href="../../../docs/reference/">Reference</a><a href="../../../docs/troubleshooting/">Troubleshooting</a><a href="../../../docs/compatibility/">Compatibility</a><a href="../../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap">
+
+<p class="ref-crumbs"><a href="../">ESC/POS command reference</a> &rsaquo; ESC @</p>
+<h1>ESC @ (1B 40): initialize the printer</h1>
+<p class="lead">Two bytes, <code>1B 40</code>, that put the printer back to its power-on text settings. Send them at the start of every job so styles left over from the last receipt do not leak into this one.</p>
+<div class="table-wrap"><table class="ref-syntax"><tbody><tr><td>ASCII</td><td><code>ESC @</code></td></tr><tr><td>Hex</td><td><code>1B 40</code></td></tr><tr><td>Decimal</td><td><code>27 64</code></td></tr></tbody></table></div>
+<h2>Parameters</h2>
+<p>No parameters.</p>
+<h2>What it does</h2>
+<p>It resets the settings that live in the printer's working memory: bold, underline, character size, white-on-black, alignment, line spacing, left margin and print width, tab stops and the selected code page. Thermalink sends it as the first two bytes of every job.</p><p>python-escpos describes it as "Clear data in buffer and reset modes". The buffer part matters: text you sent without a line feed after it has not been printed yet, and <code>ESC @</code> discards it. The viewer warns when that happens.</p><p>It does not touch settings stored in the printer's non-volatile memory (memory switches, DIP switches, default code page). My BIXOLON SRP-352plusIII has its double-byte (Chinese) mode switched on in its memory switches, and <code>ESC @</code> at the start of the job did not turn it off: every byte above 0x80 still printed as a Chinese character.</p>
+<h2>Example</h2>
+<p>Bold is on, one line prints, then <code>ESC @</code> resets it.</p>
+<pre class="ref-code"><code>1B 45 01 42 6F 6C 64 20 6C 65 66 74 20 6F 76 65 72 0A 1B 40 41 66 74 65 72 20 45 53 43 20 40 3A 20 6E 6F 72 6D 61 6C 0A</code></pre>
+<div class="ref-ex"><canvas data-hex="1B 45 01 42 6F 6C 64 20 6C 65 66 74 20 6F 76 65 72 0A 1B 40 41 66 74 65 72 20 45 53 43 20 40 3A 20 6E 6F 72 6D 61 6C 0A" width="1" height="1" aria-label="Preview of the example on 80 mm paper"></canvas></div>
+<p class="ref-note">Preview drawn in your browser by the <a href="../../../tools/escpos-viewer/">ESC/POS viewer</a>'s engine on 80 mm paper. Letters use a similar monospace font, not the printer's own. <a href="../../../tools/escpos-viewer/#hex=1B4501426F6C64206C656674206F7665720A1B4041667465722045534320403A206E6F726D616C0A">Open this example in the viewer</a> to edit the bytes.</p>
+<details><summary>How the viewer decodes these bytes</summary>
+<div class="table-wrap"><table class="ref-log"><thead><tr><th>Command</th><th>What it does</th><th>Bytes</th></tr></thead><tbody><tr><td>ESC E</td><td>Bold on</td><td class="hex">1B 45 01</td></tr><tr><td>Text</td><td>&quot;Bold left over&quot;</td><td class="hex">42 6F 6C 64 20 6C 65 66 74 20 6F 76 65 72</td></tr><tr><td>ESC @</td><td>Initialize printer: styles, alignment, code page and margins reset</td><td class="hex">1B 40</td></tr><tr><td>Text</td><td>&quot;After ESC @: normal&quot;</td><td class="hex">41 66 74 65 72 20 45 53 43 20 40 3A 20 6E 6F 72 6D 61 6C</td></tr></tbody></table></div>
+</details>
+<h2>Sending it from code</h2>
+<p><strong>JavaScript (bytes)</strong></p><pre class="ref-code"><code>const init = new Uint8Array([0x1b, 0x40]);</code></pre><p><strong>PHP with escpos-php</strong></p><pre class="ref-code"><code>$printer-&gt;initialize(); // writes 1B 40</code></pre><p><strong>Python (raw bytes)</strong></p><pre class="ref-code"><code>data = b&quot;\x1b\x40&quot; + data</code></pre>
+<h2>Common mistakes</h2>
+<ul><li>Sending <code>ESC @</code> in the middle of a job after text with no <code>LF</code>. That text is thrown away.</li><li>Expecting it to fix the code page or Kanji mode set in the printer's memory switches. It only resets runtime settings; check the self-test page instead.</li><li>Leaving it out because "the printer was just switched on". The previous job may have left bold or a different code page selected.</li></ul>
+<h2>Related commands</h2>
+<ul class="ref-list"><li><a href="../esc-t-code-page/"><code>ESC t</code></a>: select the code page for accents and the euro sign</li><li><a href="../esc-e-bold/"><code>ESC E</code></a>: bold text on a receipt printer</li><li><a href="../esc-a-justification/"><code>ESC a</code></a>: center or right-align text on a receipt printer</li></ul>
+<h2>Sources</h2>
+<ul><li><a href="https://github.com/python-escpos/python-escpos/blob/master/src/escpos/constants.py">python-escpos, <code>constants.py</code> (MIT licence)</a></li><li><a href="https://github.com/mike42/escpos-php/blob/development/src/Mike42/Escpos/Printer.php">escpos-php, <code>Printer.php</code> (MIT licence)</a></li><li><a href="../../../">Thermalink agent output, printed on a BIXOLON SRP-352plusIII (Windows 11, USB)</a></li></ul>
+<p class="ref-note">I wrote this page from the open-source libraries above, Thermalink's own output and tests on my BIXOLON printer. It is not copied from Epson's manual. For model-specific details see <a href="https://download4.epson.biz/sec_pubs/pos/reference_en/escpos/commands.html">Epson's official ESC/POS reference</a> or your printer maker's manual. Last checked 22 November 2026.</p>
+<div class="callout"><p><strong>Building receipts byte by byte?</strong> <a href="../../../">Thermalink</a> lets a web app send the receipt as JSON and prints it silently, with QR codes, logos, cut and cash drawer ($49 one-time).</p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Get Thermalink</a><a class="btn ghost" href="../../../tools/escpos-viewer/">Try the ESC/POS viewer</a></div></div>
+<script src="../../../tools/escpos-viewer/codepages.js"></script>
+<script src="../../../tools/escpos-viewer/qrtables.js"></script>
+<script src="../../../tools/escpos-viewer/qr.js"></script>
+<script src="../../../tools/escpos-viewer/c128table.js"></script>
+<script src="../../../tools/escpos-viewer/barcodes.js"></script>
+<script src="../../../tools/escpos-viewer/escpos.js"></script>
+<script src="../../../tools/escpos-viewer/render.js"></script>
+<script src="../ref.js"></script>
+
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>

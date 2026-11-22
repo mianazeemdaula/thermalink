@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GS ( k (1D 28 6B): print a QR code on a receipt printer</title>
+<meta name="description" content="Print a QR code with ESC/POS GS ( k: the five commands (model, module size, error correction, store, print), how to compute pL pH, and a byte-by-byte example.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/reference/escpos/gs-paren-k-qr-code/">
+<meta property="og:title" content="GS ( k (1D 28 6B): print a QR code on a receipt printer">
+<meta property="og:description" content="Print a QR code with ESC/POS GS ( k: the five commands (model, module size, error correction, store, print), how to compute pL pH, and a byte-by-byte example.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../../assets/site.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'">
+<link rel="stylesheet" href="../ref.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../../">Thermalink</a>
+<nav><a href="../../../docs/quickstart/">Quick start</a><a href="../../../docs/reference/">Reference</a><a href="../../../docs/troubleshooting/">Troubleshooting</a><a href="../../../docs/compatibility/">Compatibility</a><a href="../../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap">
+
+<p class="ref-crumbs"><a href="../">ESC/POS command reference</a> &rsaquo; GS ( k</p>
+<h1>GS ( k (1D 28 6B): print a QR code on a receipt printer</h1>
+<p class="lead">A QR code takes five <code>GS ( k</code> commands: choose the model, set the module size, set error correction, store the data, print it.</p>
+<div class="table-wrap"><table class="ref-syntax"><tbody><tr><td>ASCII</td><td><code>GS ( k pL pH cn fn ...</code></td></tr><tr><td>Hex</td><td><code>1D 28 6B pL pH 31 fn ...</code></td></tr><tr><td>Decimal</td><td><code>29 40 107 pL pH 49 fn ...</code></td></tr></tbody></table></div>
+<h2>Parameters</h2>
+<div class="table-wrap"><table class="ref-params"><tbody><tr><td><code>pL pH</code></td><td>length of what follows them: pL + pH &times; 256. For the store command that is the data length + 3.</td></tr><tr><td><code>cn</code></td><td>0x31 (49) = QR code.</td></tr><tr><td><code>fn 0x41 (65)</code></td><td>model: <code>1D 28 6B 04 00 31 41 32 00</code> selects model 2, the usual QR code that phone cameras read.</td></tr><tr><td><code>fn 0x43 (67)</code></td><td>module size: <code>1D 28 6B 03 00 31 43 n</code>, n = 1 to 16 dots per module.</td></tr><tr><td><code>fn 0x45 (69)</code></td><td>error correction: <code>1D 28 6B 03 00 31 45 n</code>, n = 48 L, 49 M, 50 Q, 51 H.</td></tr><tr><td><code>fn 0x50 (80)</code></td><td>store: <code>1D 28 6B pL pH 31 50 30 d1...dk</code>.</td></tr><tr><td><code>fn 0x51 (81)</code></td><td>print: <code>1D 28 6B 03 00 31 51 30</code>.</td></tr></tbody></table></div>
+<h2>What it does</h2>
+<p>The printer builds the QR code from your data, so you send a few dozen bytes instead of an image. escpos-php's <code>qrCode()</code> and Thermalink both send these five commands in this order. Thermalink uses model 2 and error correction M on the BIXOLON.</p><p>The module size sets the printed size. A short URL is a version 2 or 3 symbol, 25 to 29 modules wide, so module size 6 gives about 150 to 175 dots (19 to 22 mm at 203 dpi). escpos-php allows 1 to 16 and defaults to 3.</p><p>Higher error correction survives smudges but makes the symbol bigger. L or M is fine for receipts.</p>
+<h2>Example</h2>
+<p>Model 2, module size 6, error correction M, centered.</p>
+<pre class="ref-code"><code>1B 61 01 1D 28 6B 04 00 31 41 32 00 1D 28 6B 03 00 31 43 06 1D 28 6B 03 00 31 45 31 1D 28 6B 1D 00 31 50 30 68 74 74 70 73 3A 2F 2F 65 78 61 6D 70 6C 65 2E 63 6F 6D 2F 72 2F 31 30 34 32 1D 28 6B 03 00 31 51 30 0A 53 63 61 6E 20 66 6F 72 20 79 6F 75 72 20 65 2D 72 65 63 65 69 70 74 0A 1B 61 00</code></pre>
+<div class="ref-ex"><canvas data-hex="1B 61 01 1D 28 6B 04 00 31 41 32 00 1D 28 6B 03 00 31 43 06 1D 28 6B 03 00 31 45 31 1D 28 6B 1D 00 31 50 30 68 74 74 70 73 3A 2F 2F 65 78 61 6D 70 6C 65 2E 63 6F 6D 2F 72 2F 31 30 34 32 1D 28 6B 03 00 31 51 30 0A 53 63 61 6E 20 66 6F 72 20 79 6F 75 72 20 65 2D 72 65 63 65 69 70 74 0A 1B 61 00" width="1" height="1" aria-label="Preview of the example on 80 mm paper"></canvas></div>
+<p class="ref-note">Preview drawn in your browser by the <a href="../../../tools/escpos-viewer/">ESC/POS viewer</a>'s engine on 80 mm paper. Letters use a similar monospace font, not the printer's own. <a href="../../../tools/escpos-viewer/#hex=1B61011D286B0400314132001D286B03003143061D286B03003145311D286B1D0031503068747470733A2F2F6578616D706C652E636F6D2F722F313034321D286B03003151300A5363616E20666F7220796F757220652D726563656970740A1B6100">Open this example in the viewer</a> to edit the bytes.</p>
+<details><summary>How the viewer decodes these bytes</summary>
+<div class="table-wrap"><table class="ref-log"><thead><tr><th>Command</th><th>What it does</th><th>Bytes</th></tr></thead><tbody><tr><td>ESC a</td><td>Align center</td><td class="hex">1B 61 01</td></tr><tr><td>GS ( k</td><td>QR: model 2</td><td class="hex">1D 28 6B 04 00 31 41 32 00</td></tr><tr><td>GS ( k</td><td>QR: module size 6 dots</td><td class="hex">1D 28 6B 03 00 31 43 06</td></tr><tr><td>GS ( k</td><td>QR: error correction M</td><td class="hex">1D 28 6B 03 00 31 45 31</td></tr><tr><td>GS ( k</td><td>QR: store 26 bytes</td><td class="hex">1D 28 6B 1D 00 31 50 30 68 74 74 70 73 3A 2F 2F 65 78 61 6D 70 6C 65 2E …</td></tr><tr><td>GS ( k</td><td>QR: print, version 2, 25×25 modules, 150 dots, error correction M, 26 bytes</td><td class="hex">1D 28 6B 03 00 31 51 30</td></tr><tr><td>Text</td><td>&quot;Scan for your e-receipt&quot;</td><td class="hex">53 63 61 6E 20 66 6F 72 20 79 6F 75 72 20 65 2D 72 65 63 65 69 70 74</td></tr><tr><td>ESC a</td><td>Align left</td><td class="hex">1B 61 00</td></tr></tbody></table></div>
+</details>
+<h2>Sending it from code</h2>
+<p><strong>JavaScript (bytes)</strong></p><pre class="ref-code"><code>function qr(text, size = 6) {
+  const d = new TextEncoder().encode(text), k = d.length + 3;
+  return [0x1d,0x28,0x6b,4,0,0x31,0x41,0x32,0, 0x1d,0x28,0x6b,3,0,0x31,0x43,size,
+          0x1d,0x28,0x6b,3,0,0x31,0x45,0x31, 0x1d,0x28,0x6b,k &amp; 255,k &gt;&gt; 8,0x31,0x50,0x30, ...d,
+          0x1d,0x28,0x6b,3,0,0x31,0x51,0x30];
+}</code></pre><p><strong>PHP with escpos-php</strong></p><pre class="ref-code"><code>$printer-&gt;qrCode(&quot;https://example.com/r/1042&quot;, Printer::QR_ECLEVEL_M, 6);</code></pre><p><strong>Python (raw bytes)</strong></p><pre class="ref-code"><code>def qr(text, size=6):
+    d = text.encode(); k = len(d) + 3
+    return (b&quot;\x1d(k\x04\x001A2\x00&quot; + b&quot;\x1d(k\x03\x001C&quot; + bytes([size])
+            + b&quot;\x1d(k\x03\x001E1&quot; + b&quot;\x1d(k&quot; + bytes([k % 256, k // 256]) + b&quot;1P0&quot; + d
+            + b&quot;\x1d(k\x03\x001Q0&quot;)</code></pre>
+<h2>Common mistakes</h2>
+<ul><li>Using the data length for pL pH. It must be the data length + 3 (for <code>31 50 30</code>), or the printer reads the wrong number of bytes.</li><li>Data over 252 bytes with pH left at 0. Compute both bytes.</li><li>A module size too large for the paper. The viewer warns when the symbol is wider than the print area.</li></ul>
+<h2>Related commands</h2>
+<ul class="ref-list"><li><a href="../gs-k-barcode/"><code>GS k</code></a>: print EAN-13, UPC-A, CODE39 and CODE128 barcodes</li><li><a href="../esc-a-justification/"><code>ESC a</code></a>: center or right-align text on a receipt printer</li><li><a href="../gs-v-0-raster-image/"><code>GS v 0</code></a>: print a logo or image on a receipt printer</li></ul>
+<h2>Sources</h2>
+<ul><li><a href="https://github.com/mike42/escpos-php/blob/development/src/Mike42/Escpos/Printer.php">escpos-php, <code>Printer.php</code> (MIT licence)</a></li><li><a href="../../../">Thermalink agent output, printed on a BIXOLON SRP-352plusIII (Windows 11, USB)</a></li></ul>
+<p class="ref-note">I wrote this page from the open-source libraries above, Thermalink's own output and tests on my BIXOLON printer. It is not copied from Epson's manual. For model-specific details see <a href="https://download4.epson.biz/sec_pubs/pos/reference_en/escpos/commands.html">Epson's official ESC/POS reference</a> or your printer maker's manual. Last checked 22 November 2026.</p>
+<div class="callout"><p><strong>Building receipts byte by byte?</strong> <a href="../../../">Thermalink</a> lets a web app send the receipt as JSON and prints it silently, with QR codes, logos, cut and cash drawer ($49 one-time).</p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Get Thermalink</a><a class="btn ghost" href="../../../tools/escpos-viewer/">Try the ESC/POS viewer</a></div></div>
+<script src="../../../tools/escpos-viewer/codepages.js"></script>
+<script src="../../../tools/escpos-viewer/qrtables.js"></script>
+<script src="../../../tools/escpos-viewer/qr.js"></script>
+<script src="../../../tools/escpos-viewer/c128table.js"></script>
+<script src="../../../tools/escpos-viewer/barcodes.js"></script>
+<script src="../../../tools/escpos-viewer/escpos.js"></script>
+<script src="../../../tools/escpos-viewer/render.js"></script>
+<script src="../ref.js"></script>
+
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>

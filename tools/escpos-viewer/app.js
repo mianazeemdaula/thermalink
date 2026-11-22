@@ -128,6 +128,14 @@
   });
   zoom.addEventListener('change', applyZoom);
 
-  exSel.value = 'thermalink';
-  exSel.dispatchEvent(new Event('change'));
+  // Links from the command reference open with their bytes: #hex=1B40...
+  var m = /^#hex=((?:[0-9A-Fa-f]{2}){1,100000})$/.exec(location.hash);
+  if (m) {
+    input.value = m[1].toUpperCase().match(/../g).join(' ');
+    format.value = 'hex';
+    render();
+  } else {
+    exSel.value = 'thermalink';
+    exSel.dispatchEvent(new Event('change'));
+  }
 })();

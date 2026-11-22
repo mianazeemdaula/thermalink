@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESC p (1B 70): open the cash drawer from a receipt printer</title>
+<meta name="description" content="ESC p m t1 t2 (e.g. hex 1B 70 00 19 FA) sends the drawer-kick pulse through a receipt printer&#x27;s DK port. Pin 2 vs pin 5, pulse timing and what different libraries send.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/reference/escpos/esc-p-cash-drawer/">
+<meta property="og:title" content="ESC p (1B 70): open the cash drawer from a receipt printer">
+<meta property="og:description" content="ESC p m t1 t2 (e.g. hex 1B 70 00 19 FA) sends the drawer-kick pulse through a receipt printer&#x27;s DK port. Pin 2 vs pin 5, pulse timing and what different libraries send.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../../assets/site.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'">
+<link rel="stylesheet" href="../ref.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../../">Thermalink</a>
+<nav><a href="../../../docs/quickstart/">Quick start</a><a href="../../../docs/reference/">Reference</a><a href="../../../docs/troubleshooting/">Troubleshooting</a><a href="../../../docs/compatibility/">Compatibility</a><a href="../../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap">
+
+<p class="ref-crumbs"><a href="../">ESC/POS command reference</a> &rsaquo; ESC p</p>
+<h1>ESC p (1B 70): open the cash drawer from a receipt printer</h1>
+<p class="lead">The cash drawer plugs into the printer's drawer-kick (DK) port. <code>ESC p</code> tells the printer to send it a short pulse, which releases the drawer.</p>
+<div class="table-wrap"><table class="ref-syntax"><tbody><tr><td>ASCII</td><td><code>ESC p m t1 t2</code></td></tr><tr><td>Hex</td><td><code>1B 70 m t1 t2</code></td></tr><tr><td>Decimal</td><td><code>27 112 m t1 t2</code></td></tr></tbody></table></div>
+<h2>Parameters</h2>
+<div class="table-wrap"><table class="ref-params"><tbody><tr><td><code>m</code></td><td>which pin: 0 = pin 2, 1 = pin 5. Libraries send either 0x00/0x01 or ASCII "0"/"1" (0x30/0x31); the viewer reads the lowest bit.</td></tr><tr><td><code>t1</code></td><td>pulse on time in units of 2 ms.</td></tr><tr><td><code>t2</code></td><td>pulse off time in units of 2 ms.</td></tr></tbody></table></div>
+<h2>What it does</h2>
+<p>Nothing prints. The printer just switches the drawer solenoid on for <code>t1 &times; 2</code> ms. Try pin 2 first; if the drawer does not open, try pin 5.</p><p>Libraries pick different timings. Thermalink sends <code>1B 70 00 19 FA</code> (50 ms on, 500 ms off). escpos-php's <code>pulse()</code> takes milliseconds, halves them, defaults to 120 ms on and 240 ms off (<code>1B 70 30 3C 78</code>). python-escpos uses 100 ms on and off (<code>1B 70 00 32 32</code>).</p><p>Because it goes through the printer, the drawer opens even from a web app, as long as the bytes reach the printer raw. The browser print dialog cannot send it.</p>
+<h2>Example</h2>
+<p>The viewer shows the drawer pulse as a marker on the receipt.</p>
+<pre class="ref-code"><code>43 61 73 68 20 73 61 6C 65 20 31 32 2E 35 30 0A 1B 70 00 19 FA</code></pre>
+<div class="ref-ex"><canvas data-hex="43 61 73 68 20 73 61 6C 65 20 31 32 2E 35 30 0A 1B 70 00 19 FA" width="1" height="1" aria-label="Preview of the example on 80 mm paper"></canvas></div>
+<p class="ref-note">Preview drawn in your browser by the <a href="../../../tools/escpos-viewer/">ESC/POS viewer</a>'s engine on 80 mm paper. Letters use a similar monospace font, not the printer's own. <a href="../../../tools/escpos-viewer/#hex=436173682073616C652031322E35300A1B700019FA">Open this example in the viewer</a> to edit the bytes.</p>
+<details><summary>How the viewer decodes these bytes</summary>
+<div class="table-wrap"><table class="ref-log"><thead><tr><th>Command</th><th>What it does</th><th>Bytes</th></tr></thead><tbody><tr><td>Text</td><td>&quot;Cash sale 12.50&quot;</td><td class="hex">43 61 73 68 20 73 61 6C 65 20 31 32 2E 35 30</td></tr><tr><td>ESC p</td><td>Open cash drawer: pin 2, pulse 50 ms on, 500 ms off</td><td class="hex">1B 70 00 19 FA</td></tr></tbody></table></div>
+</details>
+<h2>Sending it from code</h2>
+<p><strong>JavaScript (bytes)</strong></p><pre class="ref-code"><code>const openDrawer = [0x1b, 0x70, 0x00, 25, 250]; // pin 2, 50 ms on, 500 ms off</code></pre><p><strong>PHP with escpos-php</strong></p><pre class="ref-code"><code>$printer-&gt;pulse();  // pin 2, 120/240 ms: 1B 70 30 3C 78
+$printer-&gt;pulse(1); // pin 5</code></pre><p><strong>Python (raw bytes)</strong></p><pre class="ref-code"><code>data += b&quot;\x1b\x70\x00\x32\x32&quot;  # pin 2, 100 ms on, 100 ms off</code></pre>
+<h2>Common mistakes</h2>
+<ul><li>Plugging the drawer into the network or phone socket. It goes into the printer's DK port, a phone-style (RJ11/RJ12) socket.</li><li>Using pin 5 for a drawer wired to pin 2. If nothing happens, try the other pin.</li><li>Expecting <code>window.print()</code> to open it. Only raw printing can send these bytes.</li></ul>
+<h2>Related commands</h2>
+<ul class="ref-list"><li><a href="../gs-v-cut/"><code>GS V</code></a>: cut the paper (full or partial)</li><li><a href="../esc-at-initialize/"><code>ESC @</code></a>: initialize the printer</li><li><a href="../esc-d-feed-lines/"><code>ESC d</code></a>: print and feed paper</li></ul>
+<h2>Sources</h2>
+<ul><li><a href="https://github.com/mike42/escpos-php/blob/development/src/Mike42/Escpos/Printer.php">escpos-php, <code>Printer.php</code> (MIT licence)</a></li><li><a href="https://github.com/python-escpos/python-escpos/blob/master/src/escpos/constants.py">python-escpos, <code>constants.py</code> (MIT licence)</a></li><li><a href="../../../">Thermalink agent output, printed on a BIXOLON SRP-352plusIII (Windows 11, USB)</a></li></ul>
+<p class="ref-note">I wrote this page from the open-source libraries above, Thermalink's own output and tests on my BIXOLON printer. It is not copied from Epson's manual. For model-specific details see <a href="https://download4.epson.biz/sec_pubs/pos/reference_en/escpos/commands.html">Epson's official ESC/POS reference</a> or your printer maker's manual. Last checked 22 November 2026.</p>
+<div class="callout"><p><strong>Building receipts byte by byte?</strong> <a href="../../../">Thermalink</a> lets a web app send the receipt as JSON and prints it silently, with QR codes, logos, cut and cash drawer ($49 one-time).</p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Get Thermalink</a><a class="btn ghost" href="../../../tools/escpos-viewer/">Try the ESC/POS viewer</a></div></div>
+<script src="../../../tools/escpos-viewer/codepages.js"></script>
+<script src="../../../tools/escpos-viewer/qrtables.js"></script>
+<script src="../../../tools/escpos-viewer/qr.js"></script>
+<script src="../../../tools/escpos-viewer/c128table.js"></script>
+<script src="../../../tools/escpos-viewer/barcodes.js"></script>
+<script src="../../../tools/escpos-viewer/escpos.js"></script>
+<script src="../../../tools/escpos-viewer/render.js"></script>
+<script src="../ref.js"></script>
+
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>

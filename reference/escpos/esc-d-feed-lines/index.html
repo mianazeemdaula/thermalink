@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESC d (1B 64) and LF (0A): print and feed paper</title>
+<meta name="description" content="LF (0A) prints the line buffer and feeds one line; ESC d n (1B 64 n) prints and feeds n lines; ESC J n feeds n dots. When to use which before a cut.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/reference/escpos/esc-d-feed-lines/">
+<meta property="og:title" content="ESC d (1B 64) and LF (0A): print and feed paper">
+<meta property="og:description" content="LF (0A) prints the line buffer and feeds one line; ESC d n (1B 64 n) prints and feeds n lines; ESC J n feeds n dots. When to use which before a cut.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../../assets/site.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'">
+<link rel="stylesheet" href="../ref.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../../">Thermalink</a>
+<nav><a href="../../../docs/quickstart/">Quick start</a><a href="../../../docs/reference/">Reference</a><a href="../../../docs/troubleshooting/">Troubleshooting</a><a href="../../../docs/compatibility/">Compatibility</a><a href="../../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap">
+
+<p class="ref-crumbs"><a href="../">ESC/POS command reference</a> &rsaquo; ESC d</p>
+<h1>ESC d (1B 64) and LF (0A): print and feed paper</h1>
+<p class="lead">Nothing prints until the printer gets a line feed. <code>0A</code> prints and feeds one line, <code>1B 64 n</code> prints and feeds <code>n</code> lines.</p>
+<div class="table-wrap"><table class="ref-syntax"><tbody><tr><td>ASCII</td><td><code>ESC d n</code></td></tr><tr><td>Hex</td><td><code>1B 64 n</code></td></tr><tr><td>Decimal</td><td><code>27 100 n</code></td></tr></tbody></table></div>
+<h2>Parameters</h2>
+<div class="table-wrap"><table class="ref-params"><tbody><tr><td><code>n</code></td><td>number of lines to feed, 0 to 255. Line height is the current line spacing (see ESC 3).</td></tr></tbody></table></div>
+<h2>What it does</h2>
+<p>Characters wait in a line buffer. <code>LF</code>, <code>ESC d</code> and <code>ESC J</code> print what is in it and move the paper. A job that ends without one of them can leave its last line unprinted.</p><p>escpos-php's <code>feed($lines)</code> writes a plain <code>LF</code> for one line and <code>ESC d n</code> for more, with <code>n</code> from 1 to 255. <code>ESC J n</code> feeds by <code>n</code> dots (motion units) instead of lines, for fine spacing.</p><p>Thermalink sends <code>ESC d 3</code> before every cut, so the cutter clears the last printed line.</p>
+<h2>Example</h2>
+<p>ESC d 3 prints "Line two" and feeds two more blank lines.</p>
+<pre class="ref-code"><code>4C 69 6E 65 20 6F 6E 65 0A 4C 69 6E 65 20 74 77 6F 1B 64 03 41 66 74 65 72 20 33 20 6C 69 6E 65 73 0A</code></pre>
+<div class="ref-ex"><canvas data-hex="4C 69 6E 65 20 6F 6E 65 0A 4C 69 6E 65 20 74 77 6F 1B 64 03 41 66 74 65 72 20 33 20 6C 69 6E 65 73 0A" width="1" height="1" aria-label="Preview of the example on 80 mm paper"></canvas></div>
+<p class="ref-note">Preview drawn in your browser by the <a href="../../../tools/escpos-viewer/">ESC/POS viewer</a>'s engine on 80 mm paper. Letters use a similar monospace font, not the printer's own. <a href="../../../tools/escpos-viewer/#hex=4C696E65206F6E650A4C696E652074776F1B640341667465722033206C696E65730A">Open this example in the viewer</a> to edit the bytes.</p>
+<details><summary>How the viewer decodes these bytes</summary>
+<div class="table-wrap"><table class="ref-log"><thead><tr><th>Command</th><th>What it does</th><th>Bytes</th></tr></thead><tbody><tr><td>Text</td><td>&quot;Line one&quot;</td><td class="hex">4C 69 6E 65 20 6F 6E 65</td></tr><tr><td>Text</td><td>&quot;Line two&quot;</td><td class="hex">4C 69 6E 65 20 74 77 6F</td></tr><tr><td>ESC d</td><td>Print and feed 3 lines</td><td class="hex">1B 64 03</td></tr><tr><td>Text</td><td>&quot;After 3 lines&quot;</td><td class="hex">41 66 74 65 72 20 33 20 6C 69 6E 65 73</td></tr></tbody></table></div>
+</details>
+<h2>Sending it from code</h2>
+<p><strong>JavaScript (bytes)</strong></p><pre class="ref-code"><code>const feed = (n) =&gt; (n === 1 ? [0x0a] : [0x1b, 0x64, n]);</code></pre><p><strong>PHP with escpos-php</strong></p><pre class="ref-code"><code>$printer-&gt;feed(3); // 1B 64 03</code></pre><p><strong>Python (raw bytes)</strong></p><pre class="ref-code"><code>data += b&quot;\x1b\x64\x03&quot;  # print and feed 3 lines</code></pre>
+<h2>Common mistakes</h2>
+<ul><li>Ending the job with text and no line feed: the last line can stay in the buffer.</li><li>Cutting straight after the last line. The cutter sits a little past the print head, so feed a few lines first or use <code>GS V 65 n</code>.</li></ul>
+<h2>Related commands</h2>
+<ul class="ref-list"><li><a href="../gs-v-cut/"><code>GS V</code></a>: cut the paper (full or partial)</li><li><a href="../esc-3-line-spacing/"><code>ESC 3</code></a>: receipt line spacing</li><li><a href="../esc-at-initialize/"><code>ESC @</code></a>: initialize the printer</li></ul>
+<h2>Sources</h2>
+<ul><li><a href="https://github.com/mike42/escpos-php/blob/development/src/Mike42/Escpos/Printer.php">escpos-php, <code>Printer.php</code> (MIT licence)</a></li><li><a href="../../../">Thermalink agent output, printed on a BIXOLON SRP-352plusIII (Windows 11, USB)</a></li></ul>
+<p class="ref-note">I wrote this page from the open-source libraries above, Thermalink's own output and tests on my BIXOLON printer. It is not copied from Epson's manual. For model-specific details see <a href="https://download4.epson.biz/sec_pubs/pos/reference_en/escpos/commands.html">Epson's official ESC/POS reference</a> or your printer maker's manual. Last checked 22 November 2026.</p>
+<div class="callout"><p><strong>Building receipts byte by byte?</strong> <a href="../../../">Thermalink</a> lets a web app send the receipt as JSON and prints it silently, with QR codes, logos, cut and cash drawer ($49 one-time).</p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Get Thermalink</a><a class="btn ghost" href="../../../tools/escpos-viewer/">Try the ESC/POS viewer</a></div></div>
+<script src="../../../tools/escpos-viewer/codepages.js"></script>
+<script src="../../../tools/escpos-viewer/qrtables.js"></script>
+<script src="../../../tools/escpos-viewer/qr.js"></script>
+<script src="../../../tools/escpos-viewer/c128table.js"></script>
+<script src="../../../tools/escpos-viewer/barcodes.js"></script>
+<script src="../../../tools/escpos-viewer/escpos.js"></script>
+<script src="../../../tools/escpos-viewer/render.js"></script>
+<script src="../ref.js"></script>
+
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>

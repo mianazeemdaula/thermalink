@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESC/POS command reference: bytes, examples and live previews</title>
+<meta name="description" content="ESC/POS commands for receipt printers, one page each: bold, size, alignment, code pages, cut, cash drawer, barcodes, QR codes and images, with hex bytes and live previews.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/reference/escpos/">
+<meta property="og:title" content="ESC/POS command reference: bytes, examples and live previews">
+<meta property="og:description" content="ESC/POS commands for receipt printers, one page each: bold, size, alignment, code pages, cut, cash drawer, barcodes, QR codes and images, with hex bytes and live previews.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../assets/site.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'">
+<link rel="stylesheet" href="ref.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../">Thermalink</a>
+<nav><a href="../../docs/quickstart/">Quick start</a><a href="../../docs/reference/">Reference</a><a href="../../docs/troubleshooting/">Troubleshooting</a><a href="../../docs/compatibility/">Compatibility</a><a href="../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap">
+
+<h1>ESC/POS command reference: the commands receipts actually use</h1>
+<p class="lead">The 15 commands that cover almost every receipt: styles, alignment, size, code pages, feed and cut, cash drawer, barcodes, QR codes and logos. Each page has the bytes, a live preview you can open in the <a href="../../tools/escpos-viewer/">ESC/POS viewer</a>, code for JavaScript, PHP and Python, and the mistakes I see most.</p>
+<div class="table-wrap"><table><thead><tr><th>Command</th><th>Hex</th><th>What it does</th></tr></thead><tbody><tr><td><a href="esc-at-initialize/"><code>ESC @</code></a></td><td><code>1B 40</code></td><td>initialize the printer</td></tr><tr><td><a href="esc-e-bold/"><code>ESC E</code></a></td><td><code>1B 45 n</code></td><td>bold text on a receipt printer</td></tr><tr><td><a href="esc-minus-underline/"><code>ESC -</code></a></td><td><code>1B 2D n</code></td><td>underline text on a receipt printer</td></tr><tr><td><a href="gs-exclamation-character-size/"><code>GS !</code></a></td><td><code>1D 21 n</code></td><td>double width and height text, up to 8x</td></tr><tr><td><a href="esc-exclamation-print-mode/"><code>ESC !</code></a></td><td><code>1B 21 n</code></td><td>set font, bold, size and underline in one byte</td></tr><tr><td><a href="esc-a-justification/"><code>ESC a</code></a></td><td><code>1B 61 n</code></td><td>center or right-align text on a receipt printer</td></tr><tr><td><a href="esc-d-feed-lines/"><code>ESC d</code></a></td><td><code>1B 64 n</code></td><td>print and feed paper</td></tr><tr><td><a href="esc-3-line-spacing/"><code>ESC 3</code></a></td><td><code>1B 33 n</code></td><td>receipt line spacing</td></tr><tr><td><a href="gs-b-reverse/"><code>GS B</code></a></td><td><code>1D 42 n</code></td><td>white on black (reverse) text</td></tr><tr><td><a href="esc-t-code-page/"><code>ESC t</code></a></td><td><code>1B 74 n</code></td><td>select the code page for accents and the euro sign</td></tr><tr><td><a href="gs-v-cut/"><code>GS V</code></a></td><td><code>1D 56 m [n]</code></td><td>cut the paper (full or partial)</td></tr><tr><td><a href="esc-p-cash-drawer/"><code>ESC p</code></a></td><td><code>1B 70 m t1 t2</code></td><td>open the cash drawer from a receipt printer</td></tr><tr><td><a href="gs-k-barcode/"><code>GS k</code></a></td><td><code>1D 6B m n d1...dn</code></td><td>print EAN-13, UPC-A, CODE39 and CODE128 barcodes</td></tr><tr><td><a href="gs-paren-k-qr-code/"><code>GS ( k</code></a></td><td><code>1D 28 6B pL pH 31 fn ...</code></td><td>print a QR code on a receipt printer</td></tr><tr><td><a href="gs-v-0-raster-image/"><code>GS v 0</code></a></td><td><code>1D 76 30 m xL xH yL yH d1...dk</code></td><td>print a logo or image on a receipt printer</td></tr></tbody></table></div>
+<h2>A receipt in these commands</h2>
+<p>A typical job: <code>ESC @</code> to reset, <code>ESC t</code> for the code page, <code>ESC a 1</code> and <code>GS !</code> for a centered heading, plain text lines ending in <code>LF</code>, <code>ESC E</code> for the total, a QR code with <code>GS ( k</code>, then <code>ESC d 3</code> and <code>GS V</code> to feed and cut. Paste your own bytes into the <a href="../../tools/escpos-viewer/">viewer</a> to see each one decoded.</p>
+<h2>Where this comes from</h2>
+<p>ESC/POS is Epson's command language; many other receipt printer brands follow it, with differences in the details. These pages are written in my own words from two widely used open-source libraries, <a href="https://github.com/mike42/escpos-php/blob/development/src/Mike42/Escpos/Printer.php">escpos-php</a> and <a href="https://github.com/python-escpos/python-escpos/blob/master/src/escpos/constants.py">python-escpos</a>, from what <a href="../../">Thermalink</a> sends to a real BIXOLON SRP-352plusIII, and from the viewer's interpreter, which every example on these pages is checked against when the site is built. Epson's own reference is <a href="https://download4.epson.biz/sec_pubs/pos/reference_en/escpos/commands.html">here</a>. For the full list on one page, see the <a href="../../cheatsheet/">ESC/POS, ZPL and TSPL cheat sheet</a>.</p>
+<div class="callout"><p><strong>Rather not build bytes by hand?</strong> <a href="../../">Thermalink</a> prints receipts and labels from a web app with no print dialog: JSON in, paper out ($49 one-time).</p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Get Thermalink</a><a class="btn ghost" href="../../tools/escpos-viewer/">Open the viewer</a></div></div>
+<p class="ref-note">Last checked 22 November 2026.</p>
+
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>

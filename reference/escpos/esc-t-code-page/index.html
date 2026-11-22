@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESC t (1B 74): select the code page for accents and the euro sign</title>
+<meta name="description" content="ESC t n (hex 1B 74 n) selects the character code table on ESC/POS printers. Epson numbers for CP437, CP850, Windows-1252, CP858, why UTF-8 prints garbage, and Star differences.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/reference/escpos/esc-t-code-page/">
+<meta property="og:title" content="ESC t (1B 74): select the code page for accents and the euro sign">
+<meta property="og:description" content="ESC t n (hex 1B 74 n) selects the character code table on ESC/POS printers. Epson numbers for CP437, CP850, Windows-1252, CP858, why UTF-8 prints garbage, and Star differences.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../../assets/site.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'">
+<link rel="stylesheet" href="../ref.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../../">Thermalink</a>
+<nav><a href="../../../docs/quickstart/">Quick start</a><a href="../../../docs/reference/">Reference</a><a href="../../../docs/troubleshooting/">Troubleshooting</a><a href="../../../docs/compatibility/">Compatibility</a><a href="../../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap">
+
+<p class="ref-crumbs"><a href="../">ESC/POS command reference</a> &rsaquo; ESC t</p>
+<h1>ESC t (1B 74): select the code page for accents and the euro sign</h1>
+<p class="lead">Receipt printers do not understand UTF-8. They print one byte per character from a code page, and <code>1B 74 n</code> picks which one.</p>
+<div class="table-wrap"><table class="ref-syntax"><tbody><tr><td>ASCII</td><td><code>ESC t n</code></td></tr><tr><td>Hex</td><td><code>1B 74 n</code></td></tr><tr><td>Decimal</td><td><code>27 116 n</code></td></tr></tbody></table></div>
+<h2>Parameters</h2>
+<div class="table-wrap"><table class="ref-params"><tbody><tr><td><code>n</code></td><td>code page number. In Epson numbering: 0 = CP437, 2 = CP850, 16 = Windows-1252, 17 = CP866, 19 = CP858 (CP850 with the euro sign). Numbers differ between brands; the self-test page usually lists them.</td></tr></tbody></table></div>
+<h2>What it does</h2>
+<p>Bytes 0x00 to 0x7F are plain ASCII on every page. Bytes 0x80 to 0xFF depend on <code>n</code>: the same byte can be "é" on one page and a box-drawing line on another. Encode your text with the matching code page before sending it.</p><p>UTF-8 uses two or three bytes for each accented letter, so "Café" sent as UTF-8 prints as "Caf├⌐" on CP437. The <a href="../../../tools/escpos-viewer/">viewer</a> flags UTF-8 sequences for this reason.</p><p>escpos-php's <code>selectCharacterTable()</code> writes <code>ESC t n</code>, except on Star printers, where it writes <code>ESC GS t n</code> instead, so the same number does not work across brands.</p><p>A printer in double-byte (Kanji / Chinese) mode ignores this for bytes above 0x80. That happened on my BIXOLON: every probe line printed Chinese characters whatever <code>n</code> was, and the cause was a memory switch. <a href="https://dev.to/azeem_ullah/your-receipt-printer-prints-ge14-instead-of-eu-mine-printed-chinese-4phe">I wrote it up on dev.to</a>.</p>
+<h2>Example</h2>
+<p>The euro sign is byte D5 in CP858 (n = 19) but byte 80 in Windows-1252 (n = 16).</p>
+<pre class="ref-code"><code>1B 74 13 43 50 38 35 38 20 65 75 72 6F 3A 20 D5 20 63 61 66 65 3A 20 63 61 66 82 0A 1B 74 10 57 69 6E 2D 31 32 35 32 20 65 75 72 6F 3A 20 80 0A 1B 74 00</code></pre>
+<div class="ref-ex"><canvas data-hex="1B 74 13 43 50 38 35 38 20 65 75 72 6F 3A 20 D5 20 63 61 66 65 3A 20 63 61 66 82 0A 1B 74 10 57 69 6E 2D 31 32 35 32 20 65 75 72 6F 3A 20 80 0A 1B 74 00" width="1" height="1" aria-label="Preview of the example on 80 mm paper"></canvas></div>
+<p class="ref-note">Preview drawn in your browser by the <a href="../../../tools/escpos-viewer/">ESC/POS viewer</a>'s engine on 80 mm paper. Letters use a similar monospace font, not the printer's own. <a href="../../../tools/escpos-viewer/#hex=1B74134350383538206575726F3A20D520636166653A20636166820A1B741057696E2D31323532206575726F3A20800A1B7400">Open this example in the viewer</a> to edit the bytes.</p>
+<details><summary>How the viewer decodes these bytes</summary>
+<div class="table-wrap"><table class="ref-log"><thead><tr><th>Command</th><th>What it does</th><th>Bytes</th></tr></thead><tbody><tr><td>ESC t</td><td>Code page 19: PC858 (Euro) (Epson numbering)</td><td class="hex">1B 74 13</td></tr><tr><td>Text</td><td>&quot;CP858 euro: € cafe: café&quot;</td><td class="hex">43 50 38 35 38 20 65 75 72 6F 3A 20 D5 20 63 61 66 65 3A 20 63 61 66 82</td></tr><tr><td>ESC t</td><td>Code page 16: WPC1252 (Western) (Epson numbering)</td><td class="hex">1B 74 10</td></tr><tr><td>Text</td><td>&quot;Win-1252 euro: €&quot;</td><td class="hex">57 69 6E 2D 31 32 35 32 20 65 75 72 6F 3A 20 80</td></tr><tr><td>ESC t</td><td>Code page 0: PC437 (USA, Standard Europe) (Epson numbering)</td><td class="hex">1B 74 00</td></tr></tbody></table></div>
+</details>
+<h2>Sending it from code</h2>
+<p><strong>JavaScript (bytes)</strong></p><pre class="ref-code"><code>// Encode yourself; TextEncoder only does UTF-8.
+const cp858 = { &quot;€&quot;: 0xd5, &quot;é&quot;: 0x82 };
+const bytes = [0x1b, 0x74, 19, ...[...&quot;5 €&quot;].map(c =&gt; cp858[c] ?? c.charCodeAt(0))];</code></pre><p><strong>PHP with escpos-php</strong></p><pre class="ref-code"><code>$printer-&gt;selectCharacterTable(19); // 1B 74 13 on Epson-style printers</code></pre><p><strong>Python (raw bytes)</strong></p><pre class="ref-code"><code>data = b&quot;\x1b\x74\x13&quot; + &quot;Café 5 €\n&quot;.encode(&quot;cp858&quot;)</code></pre>
+<h2>Common mistakes</h2>
+<ul><li>Sending UTF-8 text. Encode to the printer's code page (Python has <code>cp437</code>, <code>cp850</code>, <code>cp858</code> and <code>cp1252</code> codecs).</li><li>Taking Epson numbers to another brand. Check the printer's self-test page.</li><li>Expecting <code>ESC t</code> to fix Chinese characters. That is double-byte mode, set by <code>FS &amp;</code> or a memory switch; <code>FS .</code> cancels the command version.</li></ul>
+<h2>Related commands</h2>
+<ul class="ref-list"><li><a href="../esc-at-initialize/"><code>ESC @</code></a>: initialize the printer</li><li><a href="../esc-e-bold/"><code>ESC E</code></a>: bold text on a receipt printer</li><li><a href="../gs-exclamation-character-size/"><code>GS !</code></a>: double width and height text, up to 8x</li></ul>
+<h2>Sources</h2>
+<ul><li><a href="https://github.com/mike42/escpos-php/blob/development/src/Mike42/Escpos/Printer.php">escpos-php, <code>Printer.php</code> (MIT licence)</a></li><li><a href="https://dev.to/azeem_ullah/your-receipt-printer-prints-ge14-instead-of-eu-mine-printed-chinese-4phe">My code page article on dev.to (BIXOLON double-byte result)</a></li></ul>
+<p class="ref-note">I wrote this page from the open-source libraries above, Thermalink's own output and tests on my BIXOLON printer. It is not copied from Epson's manual. For model-specific details see <a href="https://download4.epson.biz/sec_pubs/pos/reference_en/escpos/commands.html">Epson's official ESC/POS reference</a> or your printer maker's manual. Last checked 22 November 2026.</p>
+<div class="callout"><p><strong>Building receipts byte by byte?</strong> <a href="../../../">Thermalink</a> lets a web app send the receipt as JSON and prints it silently, with QR codes, logos, cut and cash drawer ($49 one-time).</p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Get Thermalink</a><a class="btn ghost" href="../../../tools/escpos-viewer/">Try the ESC/POS viewer</a></div></div>
+<script src="../../../tools/escpos-viewer/codepages.js"></script>
+<script src="../../../tools/escpos-viewer/qrtables.js"></script>
+<script src="../../../tools/escpos-viewer/qr.js"></script>
+<script src="../../../tools/escpos-viewer/c128table.js"></script>
+<script src="../../../tools/escpos-viewer/barcodes.js"></script>
+<script src="../../../tools/escpos-viewer/escpos.js"></script>
+<script src="../../../tools/escpos-viewer/render.js"></script>
+<script src="../ref.js"></script>
+
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>

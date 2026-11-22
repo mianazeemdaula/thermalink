@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GS ! (1D 21): double width and height text, up to 8x</title>
+<meta name="description" content="GS ! n (hex 1D 21 n) sets character width and height multipliers 1 to 8 on ESC/POS printers. How to build n, a table of common values and the decimal-vs-hex mistake.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/reference/escpos/gs-exclamation-character-size/">
+<meta property="og:title" content="GS ! (1D 21): double width and height text, up to 8x">
+<meta property="og:description" content="GS ! n (hex 1D 21 n) sets character width and height multipliers 1 to 8 on ESC/POS printers. How to build n, a table of common values and the decimal-vs-hex mistake.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../../assets/site.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'">
+<link rel="stylesheet" href="../ref.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../../">Thermalink</a>
+<nav><a href="../../../docs/quickstart/">Quick start</a><a href="../../../docs/reference/">Reference</a><a href="../../../docs/troubleshooting/">Troubleshooting</a><a href="../../../docs/compatibility/">Compatibility</a><a href="../../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap">
+
+<p class="ref-crumbs"><a href="../">ESC/POS command reference</a> &rsaquo; GS !</p>
+<h1>GS ! (1D 21): double width and height text, up to 8x</h1>
+<p class="lead">One byte <code>n</code> sets both multipliers: the high four bits are width minus 1, the low four bits are height minus 1. <code>1D 21 11</code> is double width and double height.</p>
+<div class="table-wrap"><table class="ref-syntax"><tbody><tr><td>ASCII</td><td><code>GS ! n</code></td></tr><tr><td>Hex</td><td><code>1D 21 n</code></td></tr><tr><td>Decimal</td><td><code>29 33 n</code></td></tr></tbody></table></div>
+<h2>Parameters</h2>
+<div class="table-wrap"><table class="ref-params"><tbody><tr><td><code>n</code></td><td>(width - 1) &times; 16 + (height - 1), width and height 1 to 8. 0x00 normal, 0x01 double height, 0x10 double width, 0x11 both, 0x22 triple, 0x77 eight times.</td></tr></tbody></table></div>
+<h2>What it does</h2>
+<p>escpos-php's <code>setTextSize($w, $h)</code> computes <code>16 &times; (w - 1) + (h - 1)</code> and checks each multiplier is 1 to 8. python-escpos builds the same byte from width values 0x00 to 0x70 and height values 0x00 to 0x07.</p><p>Wider text means fewer characters per line. Font A is 12 dots wide, so an 80 mm printer with 576 printable dots fits 48 characters at normal width, 24 at double width and 16 at triple width.</p><p>Thermalink uses <code>GS !</code> for headings. The size stays in force until another <code>GS !</code>, <code>ESC @</code> or <code>ESC !</code>.</p>
+<h2>Example</h2>
+<p>Double width and height, normal, then double height only.</p>
+<pre class="ref-code"><code>1B 61 01 1D 21 11 43 41 46 45 0A 1D 21 00 6E 6F 72 6D 61 6C 20 73 69 7A 65 0A 1D 21 01 74 61 6C 6C 20 6F 6E 6C 79 0A 1D 21 00</code></pre>
+<div class="ref-ex"><canvas data-hex="1B 61 01 1D 21 11 43 41 46 45 0A 1D 21 00 6E 6F 72 6D 61 6C 20 73 69 7A 65 0A 1D 21 01 74 61 6C 6C 20 6F 6E 6C 79 0A 1D 21 00" width="1" height="1" aria-label="Preview of the example on 80 mm paper"></canvas></div>
+<p class="ref-note">Preview drawn in your browser by the <a href="../../../tools/escpos-viewer/">ESC/POS viewer</a>'s engine on 80 mm paper. Letters use a similar monospace font, not the printer's own. <a href="../../../tools/escpos-viewer/#hex=1B61011D2111434146450A1D21006E6F726D616C2073697A650A1D210174616C6C206F6E6C790A1D2100">Open this example in the viewer</a> to edit the bytes.</p>
+<details><summary>How the viewer decodes these bytes</summary>
+<div class="table-wrap"><table class="ref-log"><thead><tr><th>Command</th><th>What it does</th><th>Bytes</th></tr></thead><tbody><tr><td>ESC a</td><td>Align center</td><td class="hex">1B 61 01</td></tr><tr><td>GS !</td><td>Character size 2× wide, 2× high</td><td class="hex">1D 21 11</td></tr><tr><td>Text</td><td>&quot;CAFE&quot;</td><td class="hex">43 41 46 45</td></tr><tr><td>GS !</td><td>Character size 1× wide, 1× high</td><td class="hex">1D 21 00</td></tr><tr><td>Text</td><td>&quot;normal size&quot;</td><td class="hex">6E 6F 72 6D 61 6C 20 73 69 7A 65</td></tr><tr><td>GS !</td><td>Character size 1× wide, 2× high</td><td class="hex">1D 21 01</td></tr><tr><td>Text</td><td>&quot;tall only&quot;</td><td class="hex">74 61 6C 6C 20 6F 6E 6C 79</td></tr><tr><td>GS !</td><td>Character size 1× wide, 1× high</td><td class="hex">1D 21 00</td></tr></tbody></table></div>
+</details>
+<h2>Sending it from code</h2>
+<p><strong>JavaScript (bytes)</strong></p><pre class="ref-code"><code>const size = (w, h) =&gt; [0x1d, 0x21, ((w - 1) &lt;&lt; 4) | (h - 1)];
+size(2, 2); // [0x1d, 0x21, 0x11]</code></pre><p><strong>PHP with escpos-php</strong></p><pre class="ref-code"><code>$printer-&gt;setTextSize(2, 2); // 1D 21 11
+$printer-&gt;setTextSize(1, 1); // 1D 21 00</code></pre><p><strong>Python (raw bytes)</strong></p><pre class="ref-code"><code>def size(w, h):
+    return bytes([0x1d, 0x21, ((w - 1) &lt;&lt; 4) | (h - 1)])</code></pre>
+<h2>Common mistakes</h2>
+<ul><li>Writing the multiplier in decimal. <code>GS ! 2</code> is not double size: 0x02 means normal width and triple height. Double both is 0x11 (decimal 17).</li><li>Keeping the same column layout after enlarging text. Halve the characters per line at double width, or the line wraps.</li><li>Forgetting to send <code>GS ! 0</code> after the heading.</li></ul>
+<h2>Related commands</h2>
+<ul class="ref-list"><li><a href="../esc-exclamation-print-mode/"><code>ESC !</code></a>: set font, bold, size and underline in one byte</li><li><a href="../esc-a-justification/"><code>ESC a</code></a>: center or right-align text on a receipt printer</li><li><a href="../esc-e-bold/"><code>ESC E</code></a>: bold text on a receipt printer</li></ul>
+<h2>Sources</h2>
+<ul><li><a href="https://github.com/mike42/escpos-php/blob/development/src/Mike42/Escpos/Printer.php">escpos-php, <code>Printer.php</code> (MIT licence)</a></li><li><a href="https://github.com/python-escpos/python-escpos/blob/master/src/escpos/constants.py">python-escpos, <code>constants.py</code> (MIT licence)</a></li><li><a href="../../../">Thermalink agent output, printed on a BIXOLON SRP-352plusIII (Windows 11, USB)</a></li></ul>
+<p class="ref-note">I wrote this page from the open-source libraries above, Thermalink's own output and tests on my BIXOLON printer. It is not copied from Epson's manual. For model-specific details see <a href="https://download4.epson.biz/sec_pubs/pos/reference_en/escpos/commands.html">Epson's official ESC/POS reference</a> or your printer maker's manual. Last checked 22 November 2026.</p>
+<div class="callout"><p><strong>Building receipts byte by byte?</strong> <a href="../../../">Thermalink</a> lets a web app send the receipt as JSON and prints it silently, with QR codes, logos, cut and cash drawer ($49 one-time).</p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Get Thermalink</a><a class="btn ghost" href="../../../tools/escpos-viewer/">Try the ESC/POS viewer</a></div></div>
+<script src="../../../tools/escpos-viewer/codepages.js"></script>
+<script src="../../../tools/escpos-viewer/qrtables.js"></script>
+<script src="../../../tools/escpos-viewer/qr.js"></script>
+<script src="../../../tools/escpos-viewer/c128table.js"></script>
+<script src="../../../tools/escpos-viewer/barcodes.js"></script>
+<script src="../../../tools/escpos-viewer/escpos.js"></script>
+<script src="../../../tools/escpos-viewer/render.js"></script>
+<script src="../ref.js"></script>
+
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>

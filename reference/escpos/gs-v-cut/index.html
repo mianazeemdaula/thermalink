@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GS V (1D 56): cut the paper (full or partial)</title>
+<meta name="description" content="GS V (hex 1D 56 00, 1D 56 01, 1D 56 41 n, 1D 56 42 n) cuts receipt paper on ESC/POS printers. Full vs partial cut, the feed-then-cut form, and how libraries differ.">
+<link rel="canonical" href="https://mianazeemdaula.github.io/thermalink/reference/escpos/gs-v-cut/">
+<meta property="og:title" content="GS V (1D 56): cut the paper (full or partial)">
+<meta property="og:description" content="GS V (hex 1D 56 00, 1D 56 01, 1D 56 41 n, 1D 56 42 n) cuts receipt paper on ESC/POS printers. Full vs partial cut, the feed-then-cut form, and how libraries differ.">
+<meta property="og:image" content="https://mianazeemdaula.github.io/thermalink/assets/cover.png">
+<link rel="stylesheet" href="../../../assets/site.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'">
+<link rel="stylesheet" href="../ref.css">
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="../../../">Thermalink</a>
+<nav><a href="../../../docs/quickstart/">Quick start</a><a href="../../../docs/reference/">Reference</a><a href="../../../docs/troubleshooting/">Troubleshooting</a><a href="../../../docs/compatibility/">Compatibility</a><a href="../../../cheatsheet/">Cheat sheet</a><a class="btn small" href="https://7207381545467.gumroad.com/l/xwyogp">Buy</a></nav>
+</div></header>
+<main><div class="wrap">
+
+<p class="ref-crumbs"><a href="../">ESC/POS command reference</a> &rsaquo; GS V</p>
+<h1>GS V (1D 56): cut the paper (full or partial)</h1>
+<p class="lead"><code>1D 56 00</code> is a full cut, <code>1D 56 01</code> a partial cut. <code>1D 56 41 n</code> and <code>1D 56 42 n</code> feed to the cutter first, then cut.</p>
+<div class="table-wrap"><table class="ref-syntax"><tbody><tr><td>ASCII</td><td><code>GS V m [n]</code></td></tr><tr><td>Hex</td><td><code>1D 56 m [n]</code></td></tr><tr><td>Decimal</td><td><code>29 86 m [n]</code></td></tr></tbody></table></div>
+<h2>Parameters</h2>
+<div class="table-wrap"><table class="ref-params"><tbody><tr><td><code>m</code></td><td>0 or 48 = full cut, 1 or 49 = partial cut at the current position. 65 = feed, then full cut; 66 = feed, then partial cut.</td></tr><tr><td><code>n</code></td><td>only for m = 65 or 66: extra feed before the cut, 0 to 255 units.</td></tr></tbody></table></div>
+<h2>What it does</h2>
+<p>A partial cut leaves a small strip uncut, so the receipt hangs from the printer instead of dropping. A full cut separates it.</p><p>The cutter sits a little past the print head, so a cut straight after the last line goes through that line. Feed first (Thermalink sends <code>ESC d 3</code> then <code>GS V 0</code> or <code>GS V 1</code>), or use m = 65 or 66, which feed to the cutting position themselves.</p><p>Libraries pick different forms: python-escpos sends <code>1D 56 00</code> / <code>1D 56 01</code>; escpos-php's <code>cut()</code> sends <code>1D 56 41 03</code> (full) or <code>1D 56 42 03</code> (partial) by default.</p>
+<h2>Example</h2>
+<p>Feed three lines, partial cut, then the next receipt starts.</p>
+<pre class="ref-code"><code>4C 61 73 74 20 6C 69 6E 65 0A 1B 64 03 1D 56 01 4E 65 78 74 20 72 65 63 65 69 70 74 0A</code></pre>
+<div class="ref-ex"><canvas data-hex="4C 61 73 74 20 6C 69 6E 65 0A 1B 64 03 1D 56 01 4E 65 78 74 20 72 65 63 65 69 70 74 0A" width="1" height="1" aria-label="Preview of the example on 80 mm paper"></canvas></div>
+<p class="ref-note">Preview drawn in your browser by the <a href="../../../tools/escpos-viewer/">ESC/POS viewer</a>'s engine on 80 mm paper. Letters use a similar monospace font, not the printer's own. <a href="../../../tools/escpos-viewer/#hex=4C617374206C696E650A1B64031D56014E65787420726563656970740A">Open this example in the viewer</a> to edit the bytes.</p>
+<details><summary>How the viewer decodes these bytes</summary>
+<div class="table-wrap"><table class="ref-log"><thead><tr><th>Command</th><th>What it does</th><th>Bytes</th></tr></thead><tbody><tr><td>Text</td><td>&quot;Last line&quot;</td><td class="hex">4C 61 73 74 20 6C 69 6E 65</td></tr><tr><td>ESC d</td><td>Print and feed 3 lines</td><td class="hex">1B 64 03</td></tr><tr><td>GS V</td><td>Partial cut</td><td class="hex">1D 56 01</td></tr><tr><td>Text</td><td>&quot;Next receipt&quot;</td><td class="hex">4E 65 78 74 20 72 65 63 65 69 70 74</td></tr></tbody></table></div>
+</details>
+<h2>Sending it from code</h2>
+<p><strong>JavaScript (bytes)</strong></p><pre class="ref-code"><code>const fullCut = [0x1b, 0x64, 3, 0x1d, 0x56, 0];
+const feedAndPartialCut = [0x1d, 0x56, 66, 0];</code></pre><p><strong>PHP with escpos-php</strong></p><pre class="ref-code"><code>$printer-&gt;cut();                     // 1D 56 41 03
+$printer-&gt;cut(Printer::CUT_PARTIAL); // 1D 56 42 03</code></pre><p><strong>Python (raw bytes)</strong></p><pre class="ref-code"><code>data += b&quot;\x1b\x64\x03\x1d\x56\x00&quot;  # feed 3 lines, full cut</code></pre>
+<h2>Common mistakes</h2>
+<ul><li>Cutting through the last line because there was no feed before <code>GS V 0</code>.</li><li>Debugging the bytes on a printer that has no cutter. Check the model has one first.</li><li>Mixing up 0x41 and 0x01: <code>1D 56 41</code> needs one more byte (n) after it, or the printer takes your next byte as n.</li></ul>
+<h2>Related commands</h2>
+<ul class="ref-list"><li><a href="../esc-d-feed-lines/"><code>ESC d</code></a>: print and feed paper</li><li><a href="../esc-p-cash-drawer/"><code>ESC p</code></a>: open the cash drawer from a receipt printer</li><li><a href="../esc-at-initialize/"><code>ESC @</code></a>: initialize the printer</li></ul>
+<h2>Sources</h2>
+<ul><li><a href="https://github.com/mike42/escpos-php/blob/development/src/Mike42/Escpos/Printer.php">escpos-php, <code>Printer.php</code> (MIT licence)</a></li><li><a href="https://github.com/python-escpos/python-escpos/blob/master/src/escpos/constants.py">python-escpos, <code>constants.py</code> (MIT licence)</a></li><li><a href="../../../">Thermalink agent output, printed on a BIXOLON SRP-352plusIII (Windows 11, USB)</a></li></ul>
+<p class="ref-note">I wrote this page from the open-source libraries above, Thermalink's own output and tests on my BIXOLON printer. It is not copied from Epson's manual. For model-specific details see <a href="https://download4.epson.biz/sec_pubs/pos/reference_en/escpos/commands.html">Epson's official ESC/POS reference</a> or your printer maker's manual. Last checked 22 November 2026.</p>
+<div class="callout"><p><strong>Building receipts byte by byte?</strong> <a href="../../../">Thermalink</a> lets a web app send the receipt as JSON and prints it silently, with QR codes, logos, cut and cash drawer ($49 one-time).</p>
+<div class="actions"><a class="btn" href="https://7207381545467.gumroad.com/l/xwyogp">Get Thermalink</a><a class="btn ghost" href="../../../tools/escpos-viewer/">Try the ESC/POS viewer</a></div></div>
+<script src="../../../tools/escpos-viewer/codepages.js"></script>
+<script src="../../../tools/escpos-viewer/qrtables.js"></script>
+<script src="../../../tools/escpos-viewer/qr.js"></script>
+<script src="../../../tools/escpos-viewer/c128table.js"></script>
+<script src="../../../tools/escpos-viewer/barcodes.js"></script>
+<script src="../../../tools/escpos-viewer/escpos.js"></script>
+<script src="../../../tools/escpos-viewer/render.js"></script>
+<script src="../ref.js"></script>
+
+</div></main>
+<footer><div class="wrap">
+<p><strong>Thermalink</strong>: silent receipt and label printing for web apps. Sold on <a href="https://7207381545467.gumroad.com/l/xwyogp">Gumroad</a>.</p>
+<p>Hardware-tested on a BIXOLON SRP-352plusIII on Windows 11 only. See <a href="../../../docs/compatibility/">Compatibility</a> for what has and has not been tested.</p>
+</div></footer>
+</body>
+</html>
