@@ -25,6 +25,7 @@ td.hex{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;white-space:no
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px}.card h3{margin-top:0}.card p{margin:0;color:var(--muted);font-size:16px}
 .notice{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:8px;padding:14px 16px;margin:18px 0}
 .price{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}.price .card strong.amount{font-size:32px;color:var(--ink);display:block}
+video.demo{display:block;width:100%;max-width:340px;height:auto;border-radius:12px;border:1px solid var(--line);background:#000;margin:10px 0}
 .hero-img{width:100%;height:auto;border-radius:12px;border:1px solid var(--line);margin:10px 0 0}
 .search{width:100%;padding:12px 14px;font-size:17px;border:1px solid var(--line);border-radius:8px;margin:10px 0 4px}
 .tag{display:inline-block;font-size:12px;padding:1px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
